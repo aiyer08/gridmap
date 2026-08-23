@@ -293,6 +293,82 @@ export function buildProfile(
   };
 }
 
+export interface ScalarClimatology {
+  /** 168 weighted means, indexed by hour-of-week. */
+  slots: number[];
+  /** Matching weight behind each bucket. */
+  weights: number[];
+  /** Buckets with any observation at all. */
+  populated: number;
+}
+
+/**
+ * The same recency x seasonality x day-type-shrinkage machinery as
+ * `buildProfile`, but for a single scalar series. Used for demand, so the
+ * demand climatology and the intensity climatology are guaranteed to be built
+ * the same way — otherwise their residuals would not be comparable.
+ */
+export function buildScalarClimatology(
+  samples: { epochMs: number; value: number }[],
+  options: {
+    timezone: string;
+    targetDate?: Date;
+    now?: Date;
+    recencyHalfLifeDays?: number;
+    seasonalSigmaDays?: number;
+    shrinkageWeight?: number;
+  },
+): ScalarClimatology {
+  const timezone = safeTimeZone(options.timezone);
+  const targetDate = options.targetDate ?? options.now ?? new Date();
+  const referenceMs = (options.now ?? targetDate).getTime();
+  const halfLife = options.recencyHalfLifeDays ?? DEFAULT_RECENCY_HALF_LIFE_DAYS;
+  const sigma = options.seasonalSigmaDays ?? DEFAULT_SEASONAL_SIGMA_DAYS;
+  const shrinkage = options.shrinkageWeight ?? DEFAULT_SHRINKAGE_WEIGHT;
+  const targetDayOfYear = zonedParts(targetDate, timezone).dayOfYear;
+
+  const slotSum = new Array<number>(HOURS_PER_WEEK).fill(0);
+  const slotWeight = new Array<number>(HOURS_PER_WEEK).fill(0);
+  const dayTypeSum = [new Array<number>(24).fill(0), new Array<number>(24).fill(0)];
+  const dayTypeWeight = [new Array<number>(24).fill(0), new Array<number>(24).fill(0)];
+  let globalSum = 0;
+  let globalWeight = 0;
+
+  for (const sample of samples) {
+    if (!Number.isFinite(sample.epochMs) || !Number.isFinite(sample.value)) continue;
+    if (sample.value <= 0) continue;
+    const parts = zonedParts(new Date(sample.epochMs), timezone);
+    const weight =
+      recencyWeight(sample.epochMs, referenceMs, halfLife) *
+      seasonalWeight(parts.dayOfYear, targetDayOfYear, sigma);
+    if (!Number.isFinite(weight) || weight < NEGLIGIBLE_WEIGHT) continue;
+    const slot = parts.weekday * 24 + parts.hour;
+    const dayType = isWeekendDay(parts.weekday) ? 1 : 0;
+    slotSum[slot] += sample.value * weight;
+    slotWeight[slot] += weight;
+    dayTypeSum[dayType][parts.hour] += sample.value * weight;
+    dayTypeWeight[dayType][parts.hour] += weight;
+    globalSum += sample.value * weight;
+    globalWeight += weight;
+  }
+
+  const globalMean = globalWeight > 0 ? globalSum / globalWeight : 0;
+  const slots = new Array<number>(HOURS_PER_WEEK).fill(0);
+  let populated = 0;
+  for (let index = 0; index < HOURS_PER_WEEK; index += 1) {
+    const weekday = weekdayOfSlot(index);
+    const hour = hourOfSlot(index);
+    const dayType = isWeekendDay(weekday) ? 1 : 0;
+    const priorWeight = dayTypeWeight[dayType][hour];
+    const prior = priorWeight > 0 ? dayTypeSum[dayType][hour] / priorWeight : globalMean;
+    const denominator = slotWeight[index] + shrinkage;
+    slots[index] =
+      denominator > 0 ? (slotSum[index] + prior * shrinkage) / denominator : globalMean;
+    if (slotWeight[index] > 0) populated += 1;
+  }
+  return { slots, weights: slotWeight, populated };
+}
+
 /** The bucket a given instant falls into, in the profile's timezone. */
 export function slotAt(profile: RegionProfile, date: Date): ProfileSlot {
   const parts = zonedParts(date, profile.timezone);

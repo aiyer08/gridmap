@@ -16,7 +16,12 @@ import type {
 /** Minimal `fetch` shape, injected everywhere so tests never hit the network. */
 export type FetchLike = (
   input: string,
-  init?: { method?: string; headers?: Record<string, string> },
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    /** Set by callers that enforce a timeout. Real `fetch` honours it. */
+    signal?: AbortSignal;
+  },
 ) => Promise<FetchLikeResponse>;
 
 /** The parts of `Response` we actually use. */
@@ -57,6 +62,33 @@ export interface ProfileSlot {
   weight: number;
 }
 
+/**
+ * How strongly this grid's carbon intensity tracks demand.
+ *
+ * Fitted per BA from history rather than assumed, because the answer is
+ * completely different depending on what sets the margin. In demand-driven
+ * grids (CAISO r=0.79, PJM r=0.83) above-normal demand means more marginal gas
+ * and measurably higher intensity. In wind-driven grids (SPP r=0.01,
+ * ERCOT r=-0.19) demand carries no signal at all, so we must not pretend it
+ * does — hence `applied`.
+ */
+export interface DemandSensitivity {
+  /** gCO2/kWh per 1 percentage point of demand above the hour's normal. */
+  slope: number;
+  /** OLS intercept, in gCO2/kWh. Near zero by construction. */
+  intercept: number;
+  /** Pearson correlation of the two residual series. This is the gate. */
+  r: number;
+  /** Hours that went into the fit. */
+  n: number;
+  /** Root-mean-square intensity residual before the correction, gCO2/kWh. */
+  baselineRmse: number;
+  /** RMSE after applying the fit — lower is the whole point. */
+  correctedRmse: number;
+  /** True when the fit is strong enough that we actually use it. */
+  applied: boolean;
+}
+
 /** A serialisable hour-of-week climatology for one balancing authority. */
 export interface RegionProfile {
   ba: string;
@@ -74,6 +106,13 @@ export interface RegionProfile {
   slots: ProfileSlot[];
   /** Distribution of the 168 slot intensities. */
   stats: SeriesStats;
+  /**
+   * Hour-of-week mean demand in MWh, parallel to `slots`. Needed to turn a live
+   * demand reading into a *deviation from normal*, which is the only form the
+   * regression can use. Absent when the demand pull failed.
+   */
+  demandSlots?: number[];
+  demandSensitivity?: DemandSensitivity | null;
   notes: string[];
 }
 

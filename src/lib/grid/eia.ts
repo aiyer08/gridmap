@@ -34,8 +34,13 @@ import {
 import type { FuelType } from "../types";
 import type { FetchLike, FetchLikeResponse, HourlySample } from "./types";
 
-export const EIA_FUEL_TYPE_DATA_URL =
-  "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/";
+export const EIA_V2_BASE_URL = "https://api.eia.gov/v2";
+
+export const EIA_FUEL_TYPE_DATA_PATH = "electricity/rto/fuel-type-data";
+/** Demand, day-ahead demand forecast, net generation and interchange. */
+export const EIA_REGION_DATA_PATH = "electricity/rto/region-data";
+
+export const EIA_FUEL_TYPE_DATA_URL = `${EIA_V2_BASE_URL}/${EIA_FUEL_TYPE_DATA_PATH}/data/`;
 
 /** The API rejects anything larger. A year of hourly data is ~14 pages. */
 export const EIA_MAX_PAGE_SIZE = 5000;
@@ -141,6 +146,8 @@ export interface EiaRow {
 }
 
 export interface EiaEnvelope {
+  /** v2.1.13 emits warnings here; older versions nested them under `response`. */
+  warnings?: { warning?: string; description?: string }[];
   response?: {
     total?: number | string;
     dateFormat?: string;
@@ -198,6 +205,47 @@ export function parseEiaPeriod(period: string): number | null {
   return base - sign * offsetMinutes * 60_000;
 }
 
+export interface EiaDataRequest {
+  apiKey: string;
+  /** Dataset route, e.g. "electricity/rto/fuel-type-data". */
+  path: string;
+  /** Facet name -> values, e.g. `{ respondent: ["CISO"], type: ["D"] }`. */
+  facets: Record<string, string[]>;
+  start: Date | string;
+  end: Date | string;
+  offset?: number;
+  length?: number;
+  /** Override for tests; defaults to the real api.eia.gov v2 base. */
+  baseUrl?: string;
+}
+
+/**
+ * Build a v2 data URL. Bracketed parameter names (`data[0]`, `facets[x][]`) are
+ * percent-encoded by URLSearchParams, which the API accepts.
+ */
+export function buildEiaDataUrl(request: EiaDataRequest): string {
+  const search = new URLSearchParams();
+  search.set("api_key", request.apiKey);
+  search.set("frequency", "hourly");
+  search.set("data[0]", "value");
+  for (const [facet, values] of Object.entries(request.facets)) {
+    for (const value of values) search.append(`facets[${facet}][]`, value);
+  }
+  search.set("start", formatEiaPeriod(request.start));
+  search.set("end", formatEiaPeriod(request.end));
+  // Descending so that, if we ever truncate, we keep the most recent hours —
+  // the ones the recency weighting cares most about.
+  search.set("sort[0][column]", "period");
+  search.set("sort[0][direction]", "desc");
+  search.set("offset", String(Math.max(0, Math.floor(request.offset ?? 0))));
+  search.set(
+    "length",
+    String(Math.min(EIA_MAX_PAGE_SIZE, Math.max(1, Math.floor(request.length ?? EIA_MAX_PAGE_SIZE)))),
+  );
+  const base = request.baseUrl ?? EIA_V2_BASE_URL;
+  return `${base}/${request.path}/data/?${search.toString()}`;
+}
+
 export interface EiaRequestParams {
   apiKey: string;
   ba: string;
@@ -208,24 +256,18 @@ export interface EiaRequestParams {
   baseUrl?: string;
 }
 
+/** Convenience wrapper for the fuel-type dataset. */
 export function buildEiaUrl(params: EiaRequestParams): string {
-  const search = new URLSearchParams();
-  search.set("api_key", params.apiKey);
-  search.set("frequency", "hourly");
-  search.set("data[0]", "value");
-  search.set("facets[respondent][]", params.ba.toUpperCase());
-  search.set("start", formatEiaPeriod(params.start));
-  search.set("end", formatEiaPeriod(params.end));
-  // Descending so that, if we ever truncate, we keep the most recent hours —
-  // the ones the recency weighting cares most about.
-  search.set("sort[0][column]", "period");
-  search.set("sort[0][direction]", "desc");
-  search.set("offset", String(Math.max(0, Math.floor(params.offset ?? 0))));
-  search.set(
-    "length",
-    String(Math.min(EIA_MAX_PAGE_SIZE, Math.max(1, Math.floor(params.length ?? EIA_MAX_PAGE_SIZE)))),
-  );
-  return `${params.baseUrl ?? EIA_FUEL_TYPE_DATA_URL}?${search.toString()}`;
+  return buildEiaDataUrl({
+    apiKey: params.apiKey,
+    path: EIA_FUEL_TYPE_DATA_PATH,
+    facets: { respondent: [params.ba.toUpperCase()] },
+    start: params.start,
+    end: params.end,
+    offset: params.offset,
+    length: params.length,
+    baseUrl: params.baseUrl,
+  });
 }
 
 function describeError(body: unknown, status: number): string {
@@ -256,6 +298,14 @@ export interface EiaFetchOptions {
   /** Safety valve so a bad `total` can never spin forever. */
   maxPages?: number;
   baseUrl?: string;
+  /** Abort a single request after this long. */
+  requestTimeoutMs?: number;
+  /**
+   * Total budget across all pages. A full year is 16 requests and ~20s against
+   * a healthy API, so anything on a request path must set this low and accept a
+   * partial answer rather than blocking the render.
+   */
+  totalTimeoutMs?: number;
 }
 
 export interface EiaFetchResult {
@@ -264,6 +314,19 @@ export interface EiaFetchResult {
   total: number | null;
   pages: number;
   warnings: string[];
+  /** True when we stopped early on the time budget rather than on data. */
+  truncated: boolean;
+}
+
+/**
+ * A signal that aborts after `ms`. Returns undefined where AbortSignal.timeout
+ * is unavailable rather than failing — the total-budget check still applies.
+ */
+function abortSignalAfter(ms: number): AbortSignal | undefined {
+  if (!Number.isFinite(ms) || ms <= 0) return undefined;
+  const ctor = AbortSignal as unknown as { timeout?: (ms: number) => AbortSignal };
+  if (typeof ctor?.timeout === "function") return ctor.timeout(ms);
+  return undefined;
 }
 
 function resolveFetch(fetchImpl?: FetchLike): FetchLike {
@@ -282,29 +345,41 @@ function resolveFetch(fetchImpl?: FetchLike): FetchLike {
  * first. An empty `response.data` is a normal answer for a BA with no reported
  * data, not an error.
  */
-export async function fetchFuelTypeRows(
-  params: EiaRequestParams,
+export async function fetchEiaRows<T>(
+  request: Omit<EiaDataRequest, "offset" | "length">,
   options: EiaFetchOptions = {},
-): Promise<EiaFetchResult> {
+): Promise<{ rows: T[]; total: number | null; pages: number; warnings: string[]; truncated: boolean }> {
   const doFetch = resolveFetch(options.fetchImpl);
   const pageSize = Math.min(
     EIA_MAX_PAGE_SIZE,
     Math.max(1, Math.floor(options.pageSize ?? EIA_MAX_PAGE_SIZE)),
   );
   const maxPages = Math.max(1, Math.floor(options.maxPages ?? 40));
-  const rows: EiaRow[] = [];
+  const requestTimeoutMs = options.requestTimeoutMs ?? 15_000;
+  const totalTimeoutMs = options.totalTimeoutMs ?? 120_000;
+  const deadline = Date.now() + totalTimeoutMs;
+  const rows: T[] = [];
   const warnings: string[] = [];
   let total: number | null = null;
   let pages = 0;
+  let truncated = false;
 
   for (let page = 0; page < maxPages; page += 1) {
-    const url = buildEiaUrl({
-      ...params,
-      baseUrl: options.baseUrl ?? params.baseUrl,
+    if (Date.now() >= deadline) {
+      truncated = true;
+      warnings.push("Stopped paging EIA early to stay inside the time budget.");
+      break;
+    }
+    const url = buildEiaDataUrl({
+      ...request,
+      baseUrl: options.baseUrl ?? request.baseUrl,
       offset: page * pageSize,
       length: pageSize,
     });
-    const response = await doFetch(url, { method: "GET" });
+    const response = await doFetch(url, {
+      method: "GET",
+      signal: abortSignalAfter(requestTimeoutMs),
+    });
     pages += 1;
     const body = await readJson(response);
     if (!response.ok) {
@@ -315,7 +390,12 @@ export async function fetchFuelTypeRows(
       // A 200 with an error body happens for malformed facets.
       throw new EiaError(describeError(envelope, response.status), response.status);
     }
-    for (const warning of envelope.response?.warnings ?? []) {
+    // v2.1.13 puts `warnings` at the top level; v2.1.8 nested it under
+    // `response`. Read both so we do not silently miss a truncation notice.
+    for (const warning of [
+      ...(envelope.warnings ?? []),
+      ...(envelope.response?.warnings ?? []),
+    ]) {
       const text = warning.description ?? warning.warning;
       if (text) warnings.push(text);
     }
@@ -323,12 +403,40 @@ export async function fetchFuelTypeRows(
     if (Number.isFinite(reportedTotal)) total = reportedTotal;
     const data = envelope.response?.data;
     if (!Array.isArray(data) || data.length === 0) break;
-    rows.push(...data);
+    rows.push(...(data as unknown as T[]));
     if (data.length < pageSize) break;
     if (total !== null && rows.length >= total) break;
+    if (page === maxPages - 1 && (total === null || rows.length < total)) {
+      truncated = true;
+    }
   }
 
-  return { rows, total, pages, warnings };
+  return { rows, total, pages, warnings, truncated };
+}
+
+/**
+ * Fetch every fuel-type row in a window, paging until the API runs out.
+ *
+ * Stops on the first short page (fewer rows than requested), on an empty page,
+ * once `offset` passes `response.total`, at `maxPages`, or when the time budget
+ * expires — whichever comes first. An empty `response.data` is a normal answer
+ * for a BA with no reported data, not an error.
+ */
+export async function fetchFuelTypeRows(
+  params: EiaRequestParams,
+  options: EiaFetchOptions = {},
+): Promise<EiaFetchResult> {
+  return fetchEiaRows<EiaRow>(
+    {
+      apiKey: params.apiKey,
+      path: EIA_FUEL_TYPE_DATA_PATH,
+      facets: { respondent: [params.ba.toUpperCase()] },
+      start: params.start,
+      end: params.end,
+      baseUrl: params.baseUrl,
+    },
+    options,
+  );
 }
 
 export interface RowsToSamplesOptions {
@@ -445,6 +553,8 @@ export interface EiaHistoryResult {
   warnings: string[];
   /** Distinct hours that survived cleanup. */
   hours: number;
+  /** True when paging stopped on the time budget, so history is partial. */
+  truncated: boolean;
 }
 
 /** Up to a year of hourly fuel mix for one balancing authority. */
@@ -457,7 +567,7 @@ export async function fetchHourlyHistory(
   // EIA's `end` is inclusive of the hour, and the latest hours are often not
   // published yet; asking slightly into the future costs nothing.
   const end = new Date(now.getTime() + 3_600_000);
-  const { rows, pages, warnings } = await fetchFuelTypeRows(
+  const { rows, pages, warnings, truncated } = await fetchFuelTypeRows(
     { apiKey: options.apiKey, ba: options.ba, start, end },
     options,
   );
@@ -468,6 +578,7 @@ export async function fetchHourlyHistory(
     pages,
     warnings,
     hours: samples.length,
+    truncated,
   };
 }
 
@@ -490,13 +601,20 @@ export async function fetchRecentHours(
   const hours = Math.max(1, Math.floor(options.hours ?? 72));
   const start = new Date(now.getTime() - hours * 3_600_000);
   const end = new Date(now.getTime() + 3_600_000);
-  const { rows, pages, warnings } = await fetchFuelTypeRows(
+  const { rows, pages, warnings, truncated } = await fetchFuelTypeRows(
     { apiKey: options.apiKey, ba: options.ba, start, end },
-    // ~10 fuels x 72 hours = 720 rows; one page is plenty.
-    { ...options, pageSize: options.pageSize ?? 2000, maxPages: options.maxPages ?? 3 },
+    // ~10 fuels x 72 hours = 720 rows; one page is plenty. Short timeouts
+    // because this one runs on the request path.
+    {
+      ...options,
+      pageSize: options.pageSize ?? 2000,
+      maxPages: options.maxPages ?? 3,
+      requestTimeoutMs: options.requestTimeoutMs ?? 6_000,
+      totalTimeoutMs: options.totalTimeoutMs ?? 10_000,
+    },
   );
   const samples = rowsToSamples(rows, options);
-  return { samples, rowCount: rows.length, pages, warnings, hours: samples.length };
+  return { samples, rowCount: rows.length, pages, warnings, hours: samples.length, truncated };
 }
 
 /** The most recent hour we have data for, i.e. "the grid right now". */

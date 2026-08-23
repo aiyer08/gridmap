@@ -88,6 +88,15 @@ function hourBell(hour: number, center: number, width: number): number {
 }
 
 /**
+ * Single smooth diurnal cycle peaking at `peakHour`, in [0, 1]. Better than a
+ * Gaussian for features that genuinely rise and fall once a day (wind, demand),
+ * because it never flattens to zero on the far side of the clock.
+ */
+function dailyCycle(hour: number, peakHour: number): number {
+  return 0.5 * (1 + Math.cos((2 * Math.PI * (hour - peakHour)) / 24));
+}
+
+/**
  * Weekends shave a few percent off demand, and the marginal unit is nearly
  * always gas or coal, so the whole grid gets slightly cleaner.
  */
@@ -113,20 +122,21 @@ const ARCHETYPES: Record<GridArchetype, ArchetypeSpec> = {
         weekendFossilFactor(isWeekend),
     }),
   },
-  // ERCOT/SPP-like. Wind is strongest overnight and drops through the afternoon,
-  // so the cleanest hours are 1-5 AM and the dirtiest are the evening peak.
+  // SPP/ERCOT-like. Wind peaks overnight and falls away through the day, so the
+  // cleanest hours are 2-5 AM and the dirtiest are late afternoon. Deliberately
+  // NOT a flattened duck curve: measured SPP data has its *dirtiest* hour at
+  // 4 PM and its cleanest at 3 AM, the opposite of California.
   "wind-heavy": {
     windNoise: 0.09,
     shares: (hour, isWeekend) => ({
-      wind:
-        0.3 + 0.2 * hourBell(hour, 3, 6.5) - 0.13 * hourBell(hour, 15, 4.5),
-      solar: 0.16 * hourBell(hour, 12.6, 3.3),
-      nuclear: 0.085,
-      hydro: 0.006,
+      wind: 0.18 + 0.32 * dailyCycle(hour, 3.5),
+      solar: 0.15 * hourBell(hour, 12.6, 3.3),
+      nuclear: 0.06,
+      hydro: 0.008,
       other: 0.012,
       oil: 0.001,
-      coal: 0.17 * weekendFossilFactor(isWeekend),
-      gas: (0.34 + 0.2 * hourBell(hour, 19, 3.2)) * weekendFossilFactor(isWeekend),
+      coal: 0.2 * weekendFossilFactor(isWeekend),
+      gas: (0.26 + 0.18 * dailyCycle(hour, 18)) * weekendFossilFactor(isWeekend),
     }),
   },
   // Pacific Northwest. Dams follow load a little, but the mix barely moves, so

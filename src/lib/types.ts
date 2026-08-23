@@ -67,7 +67,15 @@ export interface IntensityPoint {
 }
 
 export interface ProviderAttribution {
-  id: "eia" | "electricity-maps" | "watttime" | "fallback";
+  id:
+    | "eia"
+    // EIA's region-data feed: live demand (1h lag) and the day-ahead demand
+    // forecast, used to nowcast the current hour. Separate from "eia" because
+    // it is a different dataset with very different freshness.
+    | "eia-demand"
+    | "electricity-maps"
+    | "watttime"
+    | "fallback";
   label: string;
   /** What this provider contributed to the answer the user is looking at. */
   role: string;
