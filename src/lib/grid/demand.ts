@@ -335,7 +335,19 @@ export function applyDemandCorrection(
     MAX_DEMAND_RESIDUAL_PERCENT,
     Math.max(-MAX_DEMAND_RESIDUAL_PERCENT, residualPercent),
   );
-  const raw = (sensitivity.intercept + sensitivity.slope * clippedResidual) * strength;
+  /**
+   * Slope only — the intercept is deliberately left out.
+   *
+   * `intercept` is not a demand effect: it's the level offset between the
+   * profile (a recency- and season-weighted, shrunk climatology) and the plain
+   * mean of the window the regression was fitted over. For CISO it comes out
+   * around -19 gCO2/kWh. Applying it here would subtract that offset from the
+   * hours that happen to get a demand correction and not from their neighbours,
+   * putting a ~19 g step in the middle of the series and making a corrected
+   * hour look artificially cleaner than the uncorrected hour beside it. The
+   * slope term is the part that actually answers "is today unusual?".
+   */
+  const raw = sensitivity.slope * clippedResidual * strength;
   const limit = Math.abs(climatologyIntensity) * MAX_CORRECTION_FRACTION;
   const delta = Math.min(limit, Math.max(-limit, raw));
   const value = Math.max(1, climatologyIntensity + delta);

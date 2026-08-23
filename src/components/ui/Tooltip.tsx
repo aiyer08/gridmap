@@ -155,7 +155,10 @@ export function Tooltip({
 }
 
 export interface InfoDotProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
+  extends Omit<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "content"
+  > {
   /** The explanation. Keep it one or two plain-English sentences. */
   content: React.ReactNode;
   /** Accessible name. Default: "How do we know this?" */

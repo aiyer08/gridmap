@@ -1,7 +1,8 @@
 import * as React from "react";
 import { cn } from "./cn";
 
-export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface EmptyStateProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   /** A lucide icon element. Sized and coloured for you. */
   icon?: React.ReactNode;
   title: React.ReactNode;

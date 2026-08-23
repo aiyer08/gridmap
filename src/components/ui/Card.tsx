@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "./cn";
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends React.HTMLAttributes<HTMLElement> {
   /** `raised` lifts on hover — use only when the whole card is a link/button. */
   variant?: "flat" | "raised" | "quiet";
   /** Removes the default padding so charts can bleed to the edges. */

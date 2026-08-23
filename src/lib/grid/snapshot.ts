@@ -48,7 +48,7 @@ import {
 import { fetchElectricityMaps } from "./electricityMaps";
 import { resolveProfile, type ProfileTier, type ResolveProfileOptions } from "./profileStore";
 import { cleanlinessPercentile, clamp, round, seriesStats } from "./stats";
-import { addHours, floorToHourUtc, HOURS_PER_WEEK, MS_PER_HOUR } from "./time";
+import { addHours, floorToHourUtc, HOURS_PER_WEEK, MS_PER_HOUR, zonedParts } from "./time";
 import type { FetchLike, RegionProfile } from "./types";
 import { fetchWattTime, type WattTimeCredentials } from "./wattTime";
 
@@ -130,7 +130,7 @@ interface DemandCorrection {
  * back to DF and then to persistence — a demand deviation an hour old is a
  * better estimate of right now than assuming "perfectly normal".
  */
-function buildDemandCorrection(options: {
+export function buildDemandCorrection(options: {
   profile: RegionProfile;
   livePoints: DemandPoint[];
   forecastPoints: DemandPoint[];
@@ -162,14 +162,72 @@ function buildDemandCorrection(options: {
   const residualByIndex = new Map<number, number>();
   const strengthByIndex = new Map<number, number>();
 
-  // Day-ahead forecast first: it covers the whole 13-16h horizon.
+  /** Hour-of-week normal for any timestamp, including ones before the series. */
+  const normalForTs = (ts: string): number | null => {
+    const parsed = Date.parse(ts);
+    if (Number.isNaN(parsed)) return null;
+    const parts = zonedParts(new Date(parsed), options.profile.timezone);
+    const normal = demandSlots[parts.weekday * 24 + parts.hour];
+    return Number.isFinite(normal) && normal > 0 ? normal : null;
+  };
+
+  const forecastByTs = new Map(options.forecastPoints.map((p) => [p.ts, p.mwh]));
+  const actualByTs = new Map(options.livePoints.map((p) => [p.ts, p.mwh]));
+
+  /**
+   * Anchor the day-ahead forecast to the freshest *actual* reading.
+   *
+   * `D` (actual demand) and `DF` (day-ahead forecast) are not interchangeable.
+   * Measured over 337 overlapping hours: PJM's DF tracks D to 4.3% and ERCOT's
+   * to 1.2%, but CISO's ran 17-30% *below* actual on 2026-08-23 — CAISO's
+   * day-ahead number simply isn't on the same basis as its metered demand.
+   * Since `demandSlots` are built from `D`, feeding raw `DF` into them inherits
+   * that bias wholesale: it read as demand being 8% *below* normal when actual
+   * demand was 10% *above*, flipping the sign of the correction and reporting
+   * the afternoon as the cleanest hour of the week when it was one of the
+   * dirtiest.
+   *
+   * So we use DF only for its *shape* — the hour-to-hour change from now — and
+   * take the level from real metered demand. A constant forecast bias cancels
+   * exactly, and a drifting one only affects the delta.
+   */
+  let anchorTs: string | null = null;
+  for (const point of options.livePoints) {
+    if (!forecastByTs.has(point.ts)) continue;
+    if (!anchorTs || Date.parse(point.ts) > Date.parse(anchorTs)) {
+      anchorTs = point.ts;
+    }
+  }
+
+  let anchorResidual: number | null = null;
+  if (anchorTs) {
+    const normal = normalForTs(anchorTs);
+    const actual = actualByTs.get(anchorTs);
+    if (normal !== null && actual !== undefined) {
+      anchorResidual = demandResidualPercent(actual, normal);
+    }
+  }
+
+  // Day-ahead forecast: covers the whole 13-16h horizon.
   let maxForecastIndex = -1;
+  const anchorForecast = anchorTs ? forecastByTs.get(anchorTs) : undefined;
   for (const point of options.forecastPoints) {
     const index = indexForTimestamp(point.ts, options.startMs, options.hours);
     if (index === null) continue;
     const normal = normalFor(index);
     if (normal === null) continue;
-    residualByIndex.set(index, demandResidualPercent(point.mwh, normal));
+    if (
+      anchorResidual !== null &&
+      anchorForecast !== undefined &&
+      anchorForecast > 0
+    ) {
+      // Level from metered demand, shape from the forecast.
+      const deltaPercent = ((point.mwh - anchorForecast) / normal) * 100;
+      residualByIndex.set(index, anchorResidual + deltaPercent);
+    } else {
+      // No overlap to anchor against — the raw forecast is all we have.
+      residualByIndex.set(index, demandResidualPercent(point.mwh, normal));
+    }
     if (index > maxForecastIndex) maxForecastIndex = index;
   }
 

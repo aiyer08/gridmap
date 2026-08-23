@@ -8,7 +8,55 @@
 
 import type { RegionProfile } from "../../types";
 
-export const BUNDLED_PROFILES: Record<string, RegionProfile> = {};
+import AZPS from "./AZPS.json";
+import BPAT from "./BPAT.json";
+import CISO from "./CISO.json";
+import CPLE from "./CPLE.json";
+import DUK from "./DUK.json";
+import ERCO from "./ERCO.json";
+import FPL from "./FPL.json";
+import ISNE from "./ISNE.json";
+import LDWP from "./LDWP.json";
+import LGEE from "./LGEE.json";
+import MISO from "./MISO.json";
+import NEVP from "./NEVP.json";
+import NYIS from "./NYIS.json";
+import PACE from "./PACE.json";
+import PACW from "./PACW.json";
+import PJM from "./PJM.json";
+import PSCO from "./PSCO.json";
+import PSEI from "./PSEI.json";
+import SC from "./SC.json";
+import SCEG from "./SCEG.json";
+import SOCO from "./SOCO.json";
+import SWPP from "./SWPP.json";
+import TVA from "./TVA.json";
+
+export const BUNDLED_PROFILES: Record<string, RegionProfile> = {
+  AZPS: AZPS as unknown as RegionProfile,
+  BPAT: BPAT as unknown as RegionProfile,
+  CISO: CISO as unknown as RegionProfile,
+  CPLE: CPLE as unknown as RegionProfile,
+  DUK: DUK as unknown as RegionProfile,
+  ERCO: ERCO as unknown as RegionProfile,
+  FPL: FPL as unknown as RegionProfile,
+  ISNE: ISNE as unknown as RegionProfile,
+  LDWP: LDWP as unknown as RegionProfile,
+  LGEE: LGEE as unknown as RegionProfile,
+  MISO: MISO as unknown as RegionProfile,
+  NEVP: NEVP as unknown as RegionProfile,
+  NYIS: NYIS as unknown as RegionProfile,
+  PACE: PACE as unknown as RegionProfile,
+  PACW: PACW as unknown as RegionProfile,
+  PJM: PJM as unknown as RegionProfile,
+  PSCO: PSCO as unknown as RegionProfile,
+  PSEI: PSEI as unknown as RegionProfile,
+  SC: SC as unknown as RegionProfile,
+  SCEG: SCEG as unknown as RegionProfile,
+  SOCO: SOCO as unknown as RegionProfile,
+  SWPP: SWPP as unknown as RegionProfile,
+  TVA: TVA as unknown as RegionProfile,
+};
 
 export function bundledProfile(ba: string): RegionProfile | null {
   return BUNDLED_PROFILES[ba.toUpperCase()] ?? null;
