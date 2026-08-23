@@ -1,26 +1,530 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ==========================================================================
+   GridMap design tokens
+   --------------------------------------------------------------------------
+   Palette decisions were computed, not eyeballed, with the dataviz skill's
+   validator (OKLCH lightness band, chroma floor, Machado-2009 protan/deutan
+   ΔE separation, WCAG contrast vs. the real surfaces #ffffff / #17181b).
+
+   Three colour systems, three jobs:
+     1. neutrals + one brand accent  — chrome, never data
+     2. --gm-i1..i5 (intensity ramp) — magnitude: how dirty is this hour
+     3. --gm-fuel-*  (9 fixed slots) — identity: what is powering the grid
+
+   The intensity ramp is a "semantic heat" sequential scale: monotone in
+   lightness in BOTH modes (clean is always lighter than dirty, so the order
+   survives greyscale, CVD and print) with a cool→warm hue rotation through a
+   neutral middle. Deliberately not a red/green traffic light.
+   ========================================================================== */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ---- surfaces & ink (theme-swapped below) ---- */
+  --color-page: var(--gm-page);
+  --color-surface: var(--gm-surface);
+  --color-surface-2: var(--gm-surface-2);
+  --color-surface-3: var(--gm-surface-3);
+  --color-hairline: var(--gm-hairline);
+  --color-border: var(--gm-border);
+  --color-border-strong: var(--gm-border-strong);
+
+  --color-ink: var(--gm-ink);
+  --color-ink-2: var(--gm-ink-2);
+  --color-ink-3: var(--gm-ink-3);
+  --color-ink-4: var(--gm-ink-4);
+  --color-ink-inv: var(--gm-ink-inv);
+
+  /* ---- brand accent (calm indigo-violet) ---- */
+  --color-brand: var(--gm-brand);
+  --color-brand-hover: var(--gm-brand-hover);
+  --color-brand-active: var(--gm-brand-active);
+  --color-brand-text: var(--gm-brand-text);
+  --color-brand-soft: var(--gm-brand-soft);
+  --color-brand-soft-hover: var(--gm-brand-soft-hover);
+  --color-brand-on: var(--gm-brand-on);
+
+  /* ---- carbon-intensity ramp: 1 = cleanest, 5 = dirtiest ---- */
+  --color-i1: var(--gm-i1);
+  --color-i2: var(--gm-i2);
+  --color-i3: var(--gm-i3);
+  --color-i4: var(--gm-i4);
+  --color-i5: var(--gm-i5);
+  --color-i1-soft: var(--gm-i1-soft);
+  --color-i2-soft: var(--gm-i2-soft);
+  --color-i3-soft: var(--gm-i3-soft);
+  --color-i4-soft: var(--gm-i4-soft);
+  --color-i5-soft: var(--gm-i5-soft);
+  --color-i1-text: var(--gm-i1-text);
+  --color-i3-text: var(--gm-i3-text);
+  --color-i5-text: var(--gm-i5-text);
+
+  /* ---- fuel identity slots (fixed order, never cycled) ---- */
+  --color-fuel-solar: var(--gm-fuel-solar);
+  --color-fuel-wind: var(--gm-fuel-wind);
+  --color-fuel-hydro: var(--gm-fuel-hydro);
+  --color-fuel-nuclear: var(--gm-fuel-nuclear);
+  --color-fuel-storage: var(--gm-fuel-storage);
+  --color-fuel-other: var(--gm-fuel-other);
+  --color-fuel-oil: var(--gm-fuel-oil);
+  --color-fuel-gas: var(--gm-fuel-gas);
+  --color-fuel-coal: var(--gm-fuel-coal);
+
+  /* ---- status (reserved; never used for a data series) ---- */
+  --color-good: var(--gm-good);
+  --color-good-soft: var(--gm-good-soft);
+  --color-warn: var(--gm-warn);
+  --color-warn-soft: var(--gm-warn-soft);
+  --color-danger: var(--gm-danger);
+  --color-danger-soft: var(--gm-danger-soft);
+  --color-danger-fill: var(--gm-danger-fill);
+
+  /* ---- chart chrome ---- */
+  --color-grid: var(--gm-grid);
+  --color-axis: var(--gm-axis);
+  --color-focus: var(--gm-focus);
+
+  /* ---- type ---- */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-2xs--line-height: 1.45;
+  --text-2xs--letter-spacing: 0.01em;
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1.5;
+  --text-xs--letter-spacing: 0.005em;
+  --text-sm: 0.8125rem; /* 13px */
+  --text-sm--line-height: 1.55;
+  --text-base: 0.9375rem; /* 15px */
+  --text-base--line-height: 1.6;
+  --text-lg: 1.0625rem; /* 17px */
+  --text-lg--line-height: 1.5;
+  --text-lg--letter-spacing: -0.005em;
+  --text-xl: 1.25rem; /* 20px */
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.011em;
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: 1.3;
+  --text-2xl--letter-spacing: -0.016em;
+  --text-3xl: 1.875rem; /* 30px */
+  --text-3xl--line-height: 1.22;
+  --text-3xl--letter-spacing: -0.02em;
+  --text-4xl: 2.375rem; /* 38px */
+  --text-4xl--line-height: 1.12;
+  --text-4xl--letter-spacing: -0.024em;
+  --text-5xl: 3rem; /* 48px */
+  --text-5xl--line-height: 1.04;
+  --text-5xl--letter-spacing: -0.028em;
+  --text-6xl: 3.75rem; /* 60px */
+  --text-6xl--line-height: 1;
+  --text-6xl--letter-spacing: -0.03em;
+
+  /* ---- radii ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 28px;
+
+  /* ---- shadows (soft, short-throw; hairline borders do the real work) ---- */
+  --shadow-xs: var(--gm-shadow-xs);
+  --shadow-sm: var(--gm-shadow-sm);
+  --shadow-md: var(--gm-shadow-md);
+  --shadow-lg: var(--gm-shadow-lg);
+  --shadow-xl: var(--gm-shadow-xl);
+
+  /* ---- motion ---- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.42, 0.64, 1);
+
+  --animate-shimmer: shimmer 1.6s var(--gm-ease-in-out-soft) infinite;
+  --animate-rise: rise var(--gm-dur-3) var(--gm-ease-out-soft) both;
+  --animate-pulse-ring: pulse-ring 2.4s var(--gm-ease-in-out-soft) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   Light theme (default)
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* surfaces: near-white page, pure-white cards */
+  --gm-page: #fafaf9;
+  --gm-surface: #ffffff;
+  --gm-surface-2: #f6f6f4;
+  --gm-surface-3: #efefec;
+  --gm-hairline: #eaeae6;
+  --gm-border: #dededa;
+  --gm-border-strong: #c9c9c4;
+
+  --gm-ink: #16171a; /* 17.9:1 */
+  --gm-ink-2: #5a5c63; /* 6.7:1  */
+  --gm-ink-3: #767980; /* 4.4:1  */
+  --gm-ink-4: #a1a4ab; /* decorative only */
+  --gm-ink-inv: #ffffff;
+
+  --gm-brand: #5a52ce; /* white text 5.9:1 */
+  --gm-brand-hover: #4f47c4;
+  --gm-brand-active: #453eb2;
+  --gm-brand-text: #4a43b0; /* brand as text on surface, 6.9:1 */
+  --gm-brand-soft: #f0effd;
+  --gm-brand-soft-hover: #e6e4fc;
+  --gm-brand-on: #ffffff;
+
+  /* intensity ramp — L 0.750 / 0.658 / 0.590 / 0.522 / 0.440, monotone */
+  --gm-i1: #4fc4b4;
+  --gm-i2: #22a79a;
+  --gm-i3: #827d70;
+  --gm-i4: #94592c;
+  --gm-i5: #8b2f28;
+  --gm-i1-soft: #e7f7f4;
+  --gm-i2-soft: #ddf1ee;
+  --gm-i3-soft: #f2f1ed;
+  --gm-i4-soft: #f8eee4;
+  --gm-i5-soft: #f9eae7;
+  --gm-i1-text: #0f766e; /* 5.5:1 */
+  --gm-i3-text: #5f5b51;
+  --gm-i5-text: #8b2f28; /* 8.3:1 */
+
+  /* fuel slots — validated adjacent-pair CVD ΔE 9.0, normal-vision 15.4 */
+  --gm-fuel-solar: #d9a227;
+  --gm-fuel-wind: #3fa46e;
+  --gm-fuel-hydro: #2c74c8;
+  --gm-fuel-nuclear: #9c86e6;
+  --gm-fuel-storage: #b44e8c;
+  --gm-fuel-other: #96999f;
+  --gm-fuel-oil: #94374e;
+  --gm-fuel-gas: #db884a;
+  --gm-fuel-coal: #804c2c;
+
+  --gm-good: #0f766e;
+  --gm-good-soft: #e7f7f4;
+  --gm-warn: #92620e;
+  --gm-warn-soft: #fbf1de;
+  --gm-danger: #b3261e;
+  --gm-danger-soft: #fbeae8;
+  --gm-danger-fill: #c0362c;
+
+  --gm-grid: #eeeeea;
+  --gm-axis: #dcdcd7;
+  --gm-focus: #5a52ce;
+
+  --gm-shadow-xs: 0 1px 1px rgba(16, 17, 20, 0.04);
+  --gm-shadow-sm:
+    0 1px 2px rgba(16, 17, 20, 0.05), 0 1px 1px rgba(16, 17, 20, 0.03);
+  --gm-shadow-md:
+    0 4px 12px -2px rgba(16, 17, 20, 0.08), 0 2px 4px -2px rgba(16, 17, 20, 0.05);
+  --gm-shadow-lg:
+    0 12px 32px -8px rgba(16, 17, 20, 0.13), 0 4px 8px -4px rgba(16, 17, 20, 0.06);
+  --gm-shadow-xl:
+    0 24px 56px -12px rgba(16, 17, 20, 0.18), 0 8px 16px -8px rgba(16, 17, 20, 0.08);
+
+  /* motion tokens (zeroed under prefers-reduced-motion) */
+  --gm-dur-1: 110ms;
+  --gm-dur-2: 180ms;
+  --gm-dur-3: 260ms;
+  --gm-dur-4: 420ms;
+  --gm-ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --gm-ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --gm-ease-spring: cubic-bezier(0.34, 1.42, 0.64, 1);
+}
+
+/* --------------------------------------------------------------------------
+   Dark theme — selected, not flipped. Every step re-validated against the
+   dark surface (#17181b): all 9 fuel slots clear 3:1, the ramp stays monotone.
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --gm-page: #0c0d0f;
+  --gm-surface: #17181b;
+  --gm-surface-2: #1e2024;
+  --gm-surface-3: #26282d;
+  --gm-hairline: #26282d;
+  --gm-border: #32343a;
+  --gm-border-strong: #43464d;
+
+  --gm-ink: #f4f5f6; /* 16.3:1 */
+  --gm-ink-2: #a6a9b1; /* 7.6:1  */
+  --gm-ink-3: #8b8e96; /* 5.4:1  */
+  --gm-ink-4: #6b6e76;
+  --gm-ink-inv: #0c0d0f;
+
+  --gm-brand: #6e67dc; /* white text 4.5:1 */
+  --gm-brand-hover: #7d77e2;
+  --gm-brand-active: #8b85e8;
+  --gm-brand-text: #a9a4f0;
+  --gm-brand-soft: #21203a;
+  --gm-brand-soft-hover: #2a2947;
+  --gm-brand-on: #ffffff;
+
+  /* intensity ramp — L 0.817 / 0.719 / 0.652 / 0.578 / 0.501 */
+  --gm-i1: #66dacb;
+  --gm-i2: #31bcab;
+  --gm-i3: #94907f;
+  --gm-i4: #a96833;
+  --gm-i5: #a63a2e;
+  --gm-i1-soft: #12302e;
+  --gm-i2-soft: #102b29;
+  --gm-i3-soft: #262521;
+  --gm-i4-soft: #2c1f13;
+  --gm-i5-soft: #2d1613;
+  --gm-i1-text: #66dacb;
+  --gm-i3-text: #b4b0a1;
+  --gm-i5-text: #e88a7c;
+
+  --gm-fuel-solar: #c08b26;
+  --gm-fuel-wind: #3ea06b;
+  --gm-fuel-hydro: #3372c0;
+  --gm-fuel-nuclear: #a28fe8;
+  --gm-fuel-storage: #c05a93;
+  --gm-fuel-other: #a8a399;
+  --gm-fuel-oil: #b84a63;
+  --gm-fuel-gas: #d28650;
+  --gm-fuel-coal: #8e5733;
+
+  --gm-good: #31bcab;
+  --gm-good-soft: #102b29;
+  --gm-warn: #d9a227;
+  --gm-warn-soft: #2c2413;
+  --gm-danger: #f08a82;
+  --gm-danger-soft: #2d1613;
+  --gm-danger-fill: #c0362c;
+
+  --gm-grid: #232529;
+  --gm-axis: #32343a;
+  --gm-focus: #8b85e8;
+
+  --gm-shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.4);
+  --gm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(0, 0, 0, 0.3);
+  --gm-shadow-md:
+    0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --gm-shadow-lg:
+    0 12px 32px -8px rgba(0, 0, 0, 0.65), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  --gm-shadow-xl:
+    0 24px 56px -12px rgba(0, 0, 0, 0.7), 0 8px 16px -8px rgba(0, 0, 0, 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --gm-page: #0c0d0f;
+    --gm-surface: #17181b;
+    --gm-surface-2: #1e2024;
+    --gm-surface-3: #26282d;
+    --gm-hairline: #26282d;
+    --gm-border: #32343a;
+    --gm-border-strong: #43464d;
+
+    --gm-ink: #f4f5f6;
+    --gm-ink-2: #a6a9b1;
+    --gm-ink-3: #8b8e96;
+    --gm-ink-4: #6b6e76;
+    --gm-ink-inv: #0c0d0f;
+
+    --gm-brand: #6e67dc;
+    --gm-brand-hover: #7d77e2;
+    --gm-brand-active: #8b85e8;
+    --gm-brand-text: #a9a4f0;
+    --gm-brand-soft: #21203a;
+    --gm-brand-soft-hover: #2a2947;
+    --gm-brand-on: #ffffff;
+
+    --gm-i1: #66dacb;
+    --gm-i2: #31bcab;
+    --gm-i3: #94907f;
+    --gm-i4: #a96833;
+    --gm-i5: #a63a2e;
+    --gm-i1-soft: #12302e;
+    --gm-i2-soft: #102b29;
+    --gm-i3-soft: #262521;
+    --gm-i4-soft: #2c1f13;
+    --gm-i5-soft: #2d1613;
+    --gm-i1-text: #66dacb;
+    --gm-i3-text: #b4b0a1;
+    --gm-i5-text: #e88a7c;
+
+    --gm-fuel-solar: #c08b26;
+    --gm-fuel-wind: #3ea06b;
+    --gm-fuel-hydro: #3372c0;
+    --gm-fuel-nuclear: #a28fe8;
+    --gm-fuel-storage: #c05a93;
+    --gm-fuel-other: #a8a399;
+    --gm-fuel-oil: #b84a63;
+    --gm-fuel-gas: #d28650;
+    --gm-fuel-coal: #8e5733;
+
+    --gm-good: #31bcab;
+    --gm-good-soft: #102b29;
+    --gm-warn: #d9a227;
+    --gm-warn-soft: #2c2413;
+    --gm-danger: #f08a82;
+    --gm-danger-soft: #2d1613;
+    --gm-danger-fill: #c0362c;
+
+    --gm-grid: #232529;
+    --gm-axis: #32343a;
+    --gm-focus: #8b85e8;
+
+    --gm-shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.4);
+    --gm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(0, 0, 0, 0.3);
+    --gm-shadow-md:
+      0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --gm-shadow-lg:
+      0 12px 32px -8px rgba(0, 0, 0, 0.65), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+    --gm-shadow-xl:
+      0 24px 56px -12px rgba(0, 0, 0, 0.7), 0 8px 16px -8px rgba(0, 0, 0, 0.45);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--gm-hairline);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--gm-page);
+    color: var(--gm-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /* Keyboard focus only — pointer users never see a ring. */
+  :focus-visible {
+    outline: 2px solid var(--gm-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: var(--gm-brand-soft-hover);
+    color: var(--gm-ink);
+  }
+
+  /* Numbers that sit in columns / axes align; display figures do not. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+@utility hairline-t {
+  border-top: 1px solid var(--gm-hairline);
+}
+@utility hairline-b {
+  border-bottom: 1px solid var(--gm-hairline);
+}
+
+/* A card's inner glow in dark mode keeps surfaces from looking flat. */
+@utility surface-card {
+  background-color: var(--gm-surface);
+  border: 1px solid var(--gm-hairline);
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.08;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes gm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gm-burst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--gm-bx), var(--gm-by), 0) scale(var(--gm-bs))
+      rotate(var(--gm-br));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion — actually turn it off, and zero the tokens so JS that
+   reads them (Framer Motion durations) gets 0 too.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gm-dur-1: 0ms;
+    --gm-dur-2: 0ms;
+    --gm-dur-3: 0ms;
+    --gm-dur-4: 0ms;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Purely decorative motion is removed outright, not sped up. */
+  .gm-shimmer,
+  .gm-burst-particle {
+    display: none !important;
+  }
 }
