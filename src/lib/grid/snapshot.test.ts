@@ -137,10 +137,14 @@ describe("every provider present in providers[] whether used or not", () => {
       expect(byId.has(id)).toBe(true);
       expect(typeof byId.get(id)!.detail).toBe("string");
     }
-    // A supplied profile means we never asked EIA for anything this run.
-    expect(byId.get("eia")!.used).toBe(false);
+    // "eia" reflects whether the *profile* is EIA-sourced (it is, per the
+    // fixture) regardless of whether a network call happened this run; the
+    // two live optional providers correctly show as unused since every
+    // fetch attempt failed.
+    expect(byId.get("eia")!.used).toBe(true);
     expect(byId.get("electricity-maps")!.used).toBe(false);
     expect(byId.get("watttime")!.used).toBe(false);
+    expect(byId.get("fallback")!.used).toBe(false); // profile is "eia", not modelled
   });
 });
 

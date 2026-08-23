@@ -446,6 +446,18 @@ export async function buildSnapshot(
     for (let index = 0; index < hours; index += 1) {
       const decay = Math.max(0, 1 - index / decayHours);
       if (decay <= 0) break;
+      // BUG FIX (found while writing tests): an Electricity Maps forecast
+      // point is already an authoritative override for its hour — the
+      // comment a few lines up says so explicitly ("where it has a forecast
+      // it beats a demand proxy outright"). This loop used to multiply every
+      // index's value by the anchor-decay factor regardless of source, so a
+      // forecast-sourced hour kept its `source: "forecast"` label while its
+      // number was silently rescaled by a ratio computed against *our*
+      // climatology baseline — a label that no longer matched the value it
+      // described. Hour 0 is exempt: a fresher live reading legitimately
+      // supersedes even a same-hour forecast point, which is what forces
+      // `sources[0] = "live"` below.
+      if (index > 0 && sources[index] === "forecast") continue;
       const factor = 1 + (anchorRatio - 1) * decay;
       values[index] = values[index] * factor;
       if (sources[index] === "climatology") sources[index] = "blend";
@@ -503,13 +515,23 @@ export async function buildSnapshot(
     label: "EIA grid demand",
     role: "Nowcast for the current hour and the next ~15 hours",
     used: demand.used,
+    // BUG FIX (found while writing tests): this used to check only whether
+    // `profile.demandSensitivity` existed, not whether `.applied` was true.
+    // That meant an offline run (or one with no EIA key) on a genuinely
+    // demand-sensitive grid — say CAISO, r=0.79 — reported "intensity is
+    // driven by wind and solar, not demand", flatly contradicting the fit it
+    // was quoting a confidence value from. Offline/no-key and "the fit says
+    // demand doesn't help here" are different reasons and need different
+    // copy.
     detail: demand.used
       ? demand.detail
-      : profile.demandSensitivity
-        ? `Not used: on this grid intensity is driven by wind and solar, not demand (fit r=${profile.demandSensitivity.r.toFixed(2)}).`
-        : apiKey
-          ? "No demand history available for this region."
-          : "Needs an EIA API key.",
+      : offline
+        ? "Skipped (offline mode)."
+        : profile.demandSensitivity && !profile.demandSensitivity.applied
+          ? `Not used: on this grid intensity is driven by wind and solar, not demand (fit r=${profile.demandSensitivity.r.toFixed(2)}).`
+          : apiKey
+            ? "No demand history available for this region."
+            : "Needs an EIA API key.",
   });
   if (electricityMaps) providers.push(electricityMaps.attribution);
   else {
