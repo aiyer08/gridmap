@@ -139,7 +139,7 @@ export default function TipsPage() {
             </tbody>
           </table>
         </Card>
-        <p className="mt-3 text-xs text-ink-4">
+        <p className="mt-3 text-xs text-ink-3">
           Geothermal is reported separately by the EIA and counted at 38 g/kWh,
           even though it appears inside the &ldquo;Other&rdquo; slice above —
           lumping it in with the rest of that bucket would overstate emissions on

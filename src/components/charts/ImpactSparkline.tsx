@@ -159,7 +159,7 @@ export function ImpactSparkline({
                 x2={pad.left + plotW}
                 y1={y(goal)}
                 y2={y(goal)}
-                stroke="var(--gm-ink-4)"
+                stroke="var(--gm-ink-3)"
                 strokeWidth="1"
                 shapeRendering="crispEdges"
               />
@@ -167,7 +167,7 @@ export function ImpactSparkline({
                 x={pad.left + plotW}
                 y={y(goal) - 4}
                 textAnchor="end"
-                className="fill-ink-4 text-[10px]"
+                className="fill-ink-3 text-[10px]"
               >
                 {goalLabel}
               </text>
@@ -283,7 +283,7 @@ export function ImpactSparkline({
                 }
                 y={svgH - 4}
                 textAnchor="middle"
-                className="fill-ink-4 text-[10px]"
+                className="fill-ink-3 text-[10px]"
               >
                 {p.label}
               </text>
@@ -317,17 +317,22 @@ export function ImpactSparkline({
         ) : null}
       </div>
 
-      <table className="sr-only">
-        <caption>{unitName}</caption>
-        <tbody>
-          {points.map((p) => (
-            <tr key={p.label}>
-              <th scope="row">{p.label}</th>
-              <td>{format(p.value)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Wrapped in a sr-only div, not applied to the table directly — table
+          auto-layout ignores an explicit `width: 1px` once cell content
+          demands more, which was causing horizontal page overflow. */}
+      <div className="sr-only">
+        <table>
+          <caption>{unitName}</caption>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.label}>
+                <th scope="row">{p.label}</th>
+                <td>{format(p.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

@@ -365,7 +365,7 @@ export function CarbonRibbon({
                 x={pad.left - 6}
                 y={y(t) + 3.5}
                 textAnchor="end"
-                className="fill-ink-4 text-[10px] tabular-nums"
+                className="fill-ink-3 text-[10px] tabular-nums"
               >
                 {t}
               </text>
@@ -453,7 +453,7 @@ export function CarbonRibbon({
                 x={clamp(px, pad.left + 10, pad.left + plotW - 10)}
                 y={svgH - 8}
                 textAnchor="middle"
-                className="fill-ink-4 text-[10px]"
+                className="fill-ink-3 text-[10px]"
               >
                 {text}
               </text>
@@ -519,30 +519,35 @@ export function CarbonRibbon({
       {showLegend ? (
         <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <IntensityLegend showWindowKey={windows.length > 0} size="sm" />
-          <span className="text-2xs text-ink-4">grams CO₂ per kWh</span>
+          <span className="text-2xs text-ink-3">grams CO₂ per kWh</span>
         </figcaption>
       ) : null}
 
-      {/* The table-view twin: every value reachable without hovering. */}
-      <table className="sr-only">
-        <caption>Hourly carbon intensity, grams CO₂ per kWh</caption>
-        <thead>
-          <tr>
-            <th scope="col">Time</th>
-            <th scope="col">Grams CO₂ per kWh</th>
-            <th scope="col">Compared with usual</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((p) => (
-            <tr key={p.ts}>
-              <th scope="row">{formatDayHour(p.ts, now, timeZone)}</th>
-              <td>{formatIntensity(p.gCO2PerKWh)}</td>
-              <td>{verdictFor(p.gCO2PerKWh, scale).text}</td>
+      {/* The table-view twin: every value reachable without hovering. Wrapped
+          in a sr-only div rather than applying sr-only to the table itself —
+          table auto-layout ignores an explicit `width: 1px` once cell content
+          demands more, which was blowing out the page's horizontal scroll. */}
+      <div className="sr-only">
+        <table>
+          <caption>Hourly carbon intensity, grams CO₂ per kWh</caption>
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Grams CO₂ per kWh</th>
+              <th scope="col">Compared with usual</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.ts}>
+                <th scope="row">{formatDayHour(p.ts, now, timeZone)}</th>
+                <td>{formatIntensity(p.gCO2PerKWh)}</td>
+                <td>{verdictFor(p.gCO2PerKWh, scale).text}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }
