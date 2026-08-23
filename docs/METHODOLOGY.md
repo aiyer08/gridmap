@@ -298,11 +298,14 @@ and run:
 curl -g "https://api.eia.gov/v2/electricity/rto/fuel-type-data/data/?api_key=YOUR_KEY&frequency=hourly&data[0]=value&facets[respondent][]=CISO&start=2026-08-20T00&end=2026-08-23T00&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=200"
 ```
 
-**The `-g` flag matters.** Without it, curl treats `[0]` and `[]` in the URL
+**The `-g` flag matters.** Without it, curl parses `[0]` and `[]` in the URL
 as its own glob/range syntax (the same feature that lets `curl
-"http://x/{a,b}"` fetch two URLs in one command) and will silently mangle
-`data[0]` and `facets[respondent][]` instead of sending them literally.
-`-g` (`--globoff`) turns that off so the brackets reach the API untouched.
+"http://x/{a,b}"` fetch two URLs in one command) — and for these particular
+brackets it doesn't silently misfire, it refuses outright. Verified directly:
+dropping `-g` from the command above fails immediately with `curl: (3) bad
+range in URL` at the position of the first bracket, before any request
+reaches the API. `-g` (`--globoff`) turns globbing off so the brackets are
+sent literally.
 
 To see the live demand and day-ahead forecast that the nowcast in §4 is
 built from, swap the path and add a `type` facet:

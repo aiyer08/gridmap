@@ -43,6 +43,19 @@ are all well-supported by the same data and don't need to move:
   coal-heavy BAs can plausibly exceed it, so it's left as the reserved "worst
   case" band rather than moved on speculation.
 
+**A secondary, lower-confidence consideration on the top edge:** the data
+given for this review is described as 14-day *means*, which can compress
+real hourly extremes relative to a single-hour reading. Read literally as
+hourly bounds, nothing given comes within 150 g/kWh of `dirty: 650` (MISO's
+max is 506), which would argue for pulling that edge down too — but if the
+"means" already capture most of the real hourly spread, a coal-heavy grid's
+worst individual hour (a winter cold snap running older peaking coal and any
+residual oil units flat out) could plausibly exceed 506 without necessarily
+reaching 650. We don't have literal hourly (as opposed to 14-day-mean) data
+to resolve this. `moderate: 450 → 400` is the confident fix; treat
+`dirty: 650` as worth a second look against real hourly extremes, not as a
+recommended change today.
+
 **Source:** derived directly from the 14-day regional means given for this
 review (live EIA-930 data). No external citation applies to a UX threshold
 choice; this is an internal-consistency fix, not a literature lookup.

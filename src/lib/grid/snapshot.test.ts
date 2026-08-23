@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { RegionInfo } from "../types";
+import type { ProviderAttribution, RegionInfo } from "../types";
 import { HOURS_PER_WEEK } from "./time";
 import { buildSnapshot } from "./snapshot";
 import type { FetchLike, FetchLikeResponse, RegionProfile } from "./types";
@@ -133,7 +133,14 @@ describe("every provider present in providers[] whether used or not", () => {
     });
     const byId = new Map(snapshot.providers.map((p) => [p.id, p]));
     expect(byId.size).toBe(5);
-    for (const id of ["eia", "eia-demand", "electricity-maps", "watttime", "fallback"]) {
+    const expectedIds: ProviderAttribution["id"][] = [
+      "eia",
+      "eia-demand",
+      "electricity-maps",
+      "watttime",
+      "fallback",
+    ];
+    for (const id of expectedIds) {
       expect(byId.has(id)).toBe(true);
       expect(typeof byId.get(id)!.detail).toBe("string");
     }
