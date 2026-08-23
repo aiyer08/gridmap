@@ -29,7 +29,9 @@ import PSEI from "./PSEI.json";
 import SC from "./SC.json";
 import SCEG from "./SCEG.json";
 import SOCO from "./SOCO.json";
+import SRP from "./SRP.json";
 import SWPP from "./SWPP.json";
+import TEC from "./TEC.json";
 import TVA from "./TVA.json";
 
 export const BUNDLED_PROFILES: Record<string, RegionProfile> = {
@@ -54,7 +56,9 @@ export const BUNDLED_PROFILES: Record<string, RegionProfile> = {
   SC: SC as unknown as RegionProfile,
   SCEG: SCEG as unknown as RegionProfile,
   SOCO: SOCO as unknown as RegionProfile,
+  SRP: SRP as unknown as RegionProfile,
   SWPP: SWPP as unknown as RegionProfile,
+  TEC: TEC as unknown as RegionProfile,
   TVA: TVA as unknown as RegionProfile,
 };
 

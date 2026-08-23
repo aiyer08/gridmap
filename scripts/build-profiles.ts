@@ -12,7 +12,7 @@
  * zero-network lookup.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { TOP_BALANCING_AUTHORITIES } from "../src/lib/grid/data/balancingAuthorities";
 import { buildProfile } from "../src/lib/grid/climatology";
@@ -149,8 +149,16 @@ async function buildOne(
   return profile;
 }
 
-function writeIndex(codes: string[]): void {
-  const sorted = [...codes].sort();
+/**
+ * Rewrite the index from **every** profile on disk, not just the ones built in
+ * this run. `--only=SRP,TEC` would otherwise drop the other 23 from the bundle
+ * while leaving their JSON files sitting there unreferenced.
+ */
+function writeIndex(): void {
+  const sorted = readdirSync(OUT_DIR)
+    .filter((name) => name.endsWith(".json"))
+    .map((name) => name.replace(/\.json$/, ""))
+    .sort();
   const imports = sorted
     .map((ba) => `import ${ba} from "./${ba}.json";`)
     .join("\n");
@@ -235,8 +243,10 @@ async function main(): Promise<void> {
     }
   }
 
-  writeIndex(built);
-  console.log(`\nWrote ${built.length} profile(s) and regenerated index.ts.`);
+  writeIndex();
+  console.log(
+    `\nBuilt ${built.length} profile(s) this run; index.ts now lists every profile on disk.`,
+  );
 }
 
 void main();

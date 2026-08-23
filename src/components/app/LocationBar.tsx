@@ -165,7 +165,7 @@ export function LocationBar({
         </div>
       ) : null}
 
-      {notice ? <p className="text-xs text-ink-4">{notice}</p> : null}
+      {notice ? <p className="text-xs text-ink-3">{notice}</p> : null}
     </div>
   );
 }

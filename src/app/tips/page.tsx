@@ -105,7 +105,7 @@ export default function TipsPage() {
               Lifecycle emissions factors by fuel
             </caption>
             <thead>
-              <tr className="border-b border-hairline text-left text-xs text-ink-4 uppercase">
+              <tr className="border-b border-hairline text-left text-xs text-ink-3 uppercase">
                 <th scope="col" className="px-4 py-2 font-medium sm:px-5">
                   Fuel
                 </th>
@@ -163,7 +163,7 @@ export default function TipsPage() {
           <table className="w-full text-sm">
             <caption className="sr-only">Appliance energy assumptions</caption>
             <thead>
-              <tr className="border-b border-hairline text-left text-xs text-ink-4 uppercase">
+              <tr className="border-b border-hairline text-left text-xs text-ink-3 uppercase">
                 <th scope="col" className="px-4 py-2 font-medium sm:px-5">
                   Appliance
                 </th>

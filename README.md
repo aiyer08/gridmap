@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GridMap
 
-## Getting Started
+GridMap shows how clean your local electricity grid is right now and over the
+next seven days, so you can choose when to run a dishwasher, dryer, or EV
+charger. The grid's fuel mix changes hour to hour — solar peaks midday, gas
+plants pick up the evening ramp — so the same appliance run can produce
+several times more or less CO2 depending on when you start it.
 
-First, run the development server:
+![GridMap screenshot placeholder](docs/screenshot.png)
+
+## Quick start
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>. That's it — **GridMap runs with zero API keys.**
+With no `EIA_API_KEY` set, it serves modelled grid profiles (physically
+plausible archetypes, clearly labelled as modelled) instead of measured data,
+so the app is fully usable with an empty `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+To see real data for your own region, add a free key from
+[eia.gov/opendata/register.php](https://www.eia.gov/opendata/register.php) to
+`EIA_API_KEY` in `.env.local` and restart `npm run dev`. Env vars are read at
+build/start time, so the dev server needs a restart after editing them.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Two more optional keys sharpen the current-hour reading beyond what the EIA's
+~half-day-old fuel-mix data can do on its own:
 
-## Learn More
+- **Electricity Maps** (`ELECTRICITY_MAPS_TOKEN`) — a live, minute-by-minute
+  intensity reading and a ~24h forecast. Get one at
+  [portal.electricitymaps.com](https://portal.electricitymaps.com/).
+- **WattTime** (`WATTTIME_USERNAME` / `WATTTIME_PASSWORD`) — an independent
+  cleanliness percentile, shown as a cross-check rather than blended into the
+  forecast. Get credentials at [docs.watttime.org](https://docs.watttime.org/).
+  Its free tier typically only covers **one** grid region, so pick the one
+  you actually live in.
 
-To learn more about Next.js, take a look at the following resources:
+None of these are required, and the app tells you in the UI which of them
+it's actually using for a given answer.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Signing in (magic link, via Supabase) is also optional — it exists only so
+your logged history follows you to another device. With no Supabase env vars
+set, everything is saved to the browser's `localStorage` instead, and nothing
+in the UI is gated behind an account.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project layout
 
-## Deploy on Vercel
+```
+src/app/                  Next.js App Router pages (/, /impact, /tips) and the one API route
+src/app/api/grid/         GET /api/grid — the only dynamic route; calls the EIA API server-side
+src/components/app/       The main UI: today's forecast, appliance picker, run-window suggestions
+src/components/auth/      SignInCard and the session hook (Supabase magic link)
+src/components/charts/    The intensity/CO2 charts
+src/components/ui/        Shared primitives (buttons, cards, toasts, theme)
+src/lib/grid/             Grid intensity: EIA/Electricity Maps/WattTime clients, climatology,
+                          the tiered profile resolver, and 25 pre-built regional profiles
+                          under data/profiles/ (npm run build:profiles regenerates these)
+src/lib/track/            The tracker's storage layer — localStorage and Supabase implementations
+                          behind one interface, plus the useTracker hook the UI calls
+src/lib/region/           ZIP -> balancing authority resolution
+supabase/                 schema.sql (one table, RLS-scoped) and setup notes
+scripts/build-profiles.ts Rebuilds the committed EIA profiles in src/lib/grid/data/profiles/
+docs/                     METHODOLOGY.md (the science) and DEPLOYMENT.md (Supabase + Vercel runbook)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command                | What it does                                                          |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `npm run dev`           | Local dev server with hot reload.                                     |
+| `npm run build`         | Production build (also what Vercel runs).                             |
+| `npm test`              | Runs the test suite once (Vitest).                                    |
+| `npm run test:watch`    | Same, in watch mode.                                                   |
+| `npm run build:profiles`| Rebuilds the committed grid profiles in `src/lib/grid/data/profiles/` from a year of EIA history. Needs `EIA_API_KEY`. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#keeping-grid-profiles-fresh) for how to keep these from going stale in production. |
+| `npm run lint`          | ESLint.                                                                |
+| `npm start`             | Serves a production build (`next build` first).                       |
+
+## Learn more
+
+- [docs/METHODOLOGY.md](docs/METHODOLOGY.md) — where the numbers come from: the
+  EIA climatology, the demand nowcast, how Electricity Maps and WattTime are
+  blended in (or deliberately not), and the confidence labelling.
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — the runbook for standing up
+  Supabase and deploying to Vercel, including a post-deploy smoke test and
+  troubleshooting for the failures that actually happen.

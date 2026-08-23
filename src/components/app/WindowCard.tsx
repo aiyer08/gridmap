@@ -95,17 +95,17 @@ export function WindowCard({
               <span className="text-sm text-ink-3">less CO₂</span>
             </div>
             <p className="mt-1 text-sm leading-snug text-ink-2">{headline}</p>
-            <p className="mt-1 text-xs text-ink-4">({parenthetical})</p>
+            <p className="mt-1 text-xs text-ink-3">({parenthetical})</p>
           </div>
 
           <p className="text-xs leading-relaxed text-ink-3">
             {whyThisWindow(runWindow)}{" "}
-            <span className="text-ink-4">
+            <span className="text-ink-3">
               Grid runs about {Math.round(runWindow.avgIntensity)} g/kWh then.
             </span>
           </p>
 
-          <p className="text-[11px] text-ink-4" title={CONFIDENCE_COPY[runWindow.confidence]}>
+          <p className="text-[11px] text-ink-3" title={CONFIDENCE_COPY[runWindow.confidence]}>
             {CONFIDENCE_COPY[runWindow.confidence]}
           </p>
 

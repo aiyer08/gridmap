@@ -71,7 +71,7 @@ export function GridNowCard({
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
           <div>
-            <dt className="text-xs font-medium tracking-wide text-ink-4 uppercase">
+            <dt className="text-xs font-medium tracking-wide text-ink-3 uppercase">
               Right now
             </dt>
             <dd className="mt-1 flex items-baseline gap-1">
@@ -80,13 +80,13 @@ export function GridNowCard({
               </span>
               <span className="text-xs text-ink-3">g CO₂/kWh</span>
             </dd>
-            <dd className="mt-0.5 text-xs text-ink-4">
+            <dd className="mt-0.5 text-xs text-ink-3">
               {absoluteLabel(snapshot.now.gCO2PerKWh)} for a US grid
             </dd>
           </div>
 
           <div>
-            <dt className="text-xs font-medium tracking-wide text-ink-4 uppercase">
+            <dt className="text-xs font-medium tracking-wide text-ink-3 uppercase">
               This week&apos;s range
             </dt>
             <dd className="mt-1 flex items-baseline gap-1">
@@ -96,18 +96,18 @@ export function GridNowCard({
                 {Math.round(snapshot.stats.max)}
               </span>
             </dd>
-            <dd className="mt-0.5 text-xs text-ink-4">
+            <dd className="mt-0.5 text-xs text-ink-3">
               cleanest to dirtiest hour
             </dd>
           </div>
 
           <div className="col-span-2 sm:col-span-1">
-            <dt className="flex items-center gap-1 text-xs font-medium tracking-wide text-ink-4 uppercase">
+            <dt className="flex items-center gap-1 text-xs font-medium tracking-wide text-ink-3 uppercase">
               Cleaner than
               <Tooltip content="Out of every hour in the next seven days on your grid, this share is dirtier than the hour you're in now.">
                 <span
                   tabIndex={0}
-                  className="cursor-help text-ink-4 underline decoration-dotted underline-offset-2"
+                  className="cursor-help text-ink-3 underline decoration-dotted underline-offset-2"
                   aria-label="How this is calculated"
                 >
                   ?
@@ -121,7 +121,7 @@ export function GridNowCard({
               <span className="text-xs text-ink-3">of this week</span>
             </dd>
             {/* Thresholds match verdictForNow so the two lines never disagree. */}
-            <dd className="mt-0.5 flex items-center gap-1 text-xs text-ink-4">
+            <dd className="mt-0.5 flex items-center gap-1 text-xs text-ink-3">
               {percentile >= 66 ? (
                 <TrendingDown className="size-3" />
               ) : (
@@ -142,7 +142,7 @@ export function GridNowCard({
               <h3 className="text-sm font-medium">
                 What&apos;s powering your grid
                 {isLive ? (
-                  <span className="ml-1.5 font-normal text-ink-4">
+                  <span className="ml-1.5 font-normal text-ink-3">
                     (typical for this hour)
                   </span>
                 ) : null}
@@ -161,7 +161,7 @@ export function GridNowCard({
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3 text-xs text-ink-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3 text-xs text-ink-3">
           <Badge tone={isLive ? "accent" : "neutral"} size="sm" dot>
             {isLive ? "Live estimate" : "Modelled from history"}
           </Badge>

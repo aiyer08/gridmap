@@ -6,7 +6,9 @@
 -- Apply with: Supabase dashboard → SQL Editor → paste → Run.
 -- See supabase/README.md for the full checklist.
 
--- gen_random_uuid() lives here. Supabase projects usually have it already.
+-- gen_random_uuid() has been built into Postgres core since v13 (Supabase runs
+-- 15+), so this is not strictly required — kept only so this file still works
+-- unmodified on an older or self-hosted Postgres.
 create extension if not exists pgcrypto;
 
 create table if not exists public.logged_actions (
@@ -63,6 +65,20 @@ create index if not exists logged_actions_user_status_idx
 --
 -- The browser talks to PostgREST with the anon key, so these policies are the
 -- only thing standing between users' histories. No policy = no access.
+--
+-- Two things worth calling out, both from Supabase's own RLS performance
+-- guide (supabase.com/docs/guides/troubleshooting/rls-performance-and-best-
+-- practices-Z5Jjwv):
+--   1. `to authenticated` on every policy means an anonymous (anon-key, no
+--      JWT) request is rejected before Postgres does any per-row work.
+--   2. `auth.uid()` is wrapped as `(select auth.uid())`. Bare `auth.uid()` is
+--      re-evaluated once per row scanned; wrapping it in a `select` lets the
+--      planner treat it as an initPlan and evaluate it once per statement
+--      instead. Table is tiny per user, so this is a rounding error today,
+--      but it costs nothing and is the documented idiom.
+-- Both `user_id` (via the index below) and the `to authenticated` role check
+-- are already the right shape; nothing here changes the security guarantee,
+-- only how cheaply Postgres proves it.
 -- ---------------------------------------------------------------------------
 
 alter table public.logged_actions enable row level security;
@@ -71,23 +87,23 @@ drop policy if exists "own rows: select" on public.logged_actions;
 create policy "own rows: select"
   on public.logged_actions for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows: insert" on public.logged_actions;
 create policy "own rows: insert"
   on public.logged_actions for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows: update" on public.logged_actions;
 create policy "own rows: update"
   on public.logged_actions for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows: delete" on public.logged_actions;
 create policy "own rows: delete"
   on public.logged_actions for delete
   to authenticated
-  using (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id);

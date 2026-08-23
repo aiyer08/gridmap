@@ -107,7 +107,7 @@ export function AppliancePlanner({
         />
       </div>
 
-      <p className="mb-4 text-xs text-ink-4">
+      <p className="mb-4 text-xs text-ink-3">
         <Tooltip content={plan.appliance.assumption}>
           <span
             tabIndex={0}

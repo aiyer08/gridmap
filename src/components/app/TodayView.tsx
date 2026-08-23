@@ -264,20 +264,20 @@ function DataProvenance({
             </Badge>
             <span className="font-medium">{p.label}</span>
             <span className="text-ink-3">{p.role}</span>
-            {p.detail ? <span className="text-ink-4">— {p.detail}</span> : null}
+            {p.detail ? <span className="text-ink-3">— {p.detail}</span> : null}
           </li>
         ))}
       </ul>
       {snapshot.notes.length > 0 ? (
         <ul className="mt-3 space-y-1">
           {snapshot.notes.map((note) => (
-            <li key={note} className="text-xs text-ink-4">
+            <li key={note} className="text-xs text-ink-3">
               {note}
             </li>
           ))}
         </ul>
       ) : null}
-      <p className="mt-3 text-xs text-ink-4">
+      <p className="mt-3 text-xs text-ink-3">
         <Link href="/tips#how-it-works" className="underline underline-offset-2">
           How the forecast is built
         </Link>

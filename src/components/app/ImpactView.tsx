@@ -151,7 +151,7 @@ export function ImpactView() {
                   label="of absorption"
                 />
               </ul>
-              <p className="mt-4 text-xs text-ink-4">
+              <p className="mt-4 text-xs text-ink-3">
                 Using 400 g of CO₂ per mile driven (EPA average passenger
                 vehicle), 8 g per phone charge, and 58 g absorbed per day by one
                 mature tree. That&apos;s {formatGramsLong(summary.totalGramsSaved)}{" "}
@@ -173,7 +173,7 @@ export function ImpactView() {
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{action.label}</p>
-                      <p className="text-xs text-ink-4">
+                      <p className="text-xs text-ink-3">
                         {formatDayLabel(action.loggedAt, timezone ?? "UTC")}
                         {action.status === "declined" ? " · skipped" : ""}
                       </p>
@@ -242,7 +242,7 @@ export function ImpactView() {
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{habit.label}</span>
-                <span className="mt-0.5 block text-xs text-ink-4">
+                <span className="mt-0.5 block text-xs text-ink-3">
                   {habit.detail}
                 </span>
               </span>
