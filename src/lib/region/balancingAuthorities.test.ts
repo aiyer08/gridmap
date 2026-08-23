@@ -48,7 +48,8 @@ describe("balancing authority table", () => {
 
   it("gives every BA a name, a friendly label, a timezone and a centroid", () => {
     for (const ba of BALANCING_AUTHORITIES) {
-      expect(ba.name.length, ba.ba).toBeGreaterThan(3);
+      // JEA's official name really is just "JEA", hence >= rather than >.
+      expect(ba.name.length, ba.ba).toBeGreaterThanOrEqual(3);
       expect(ba.shortName.length, ba.ba).toBeGreaterThan(3);
       // A homeowner should recognise the label, so it must not be bare jargon.
       expect(ba.shortName, ba.ba).not.toBe(ba.ba);
@@ -124,9 +125,11 @@ describe("balancing authority table", () => {
     const generationOnly = BALANCING_AUTHORITIES.filter((ba) => ba.generationOnly)
       .map((ba) => ba.ba)
       .sort();
-    expect(generationOnly).toEqual(["AVRN", "DEAA", "GRID", "GWA", "SEPA", "SIKE", "YAD"]);
+    expect(generationOnly).toEqual([
+      "AVRN", "DEAA", "GRID", "GWA", "SEPA", "SIKE", "SPA", "YAD",
+    ]);
     for (const ba of LOAD_SERVING_BAS) expect(ba.generationOnly).toBeUndefined();
-    expect(LOAD_SERVING_BAS.length).toBe(BALANCING_AUTHORITIES.length - 7);
+    expect(LOAD_SERVING_BAS.length).toBe(BALANCING_AUTHORITIES.length - 8);
   });
 
   it("accepts aggregates and retired codes as EIA respondents", () => {
