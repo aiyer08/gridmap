@@ -161,7 +161,10 @@ export function TodayView() {
                 Best window each day
               </h2>
               <p className="mt-0.5 mb-3 text-sm text-ink-3">
-                For planning around a busy week.
+                For planning around a busy week. Today and tomorrow reflect
+                what&apos;s actually happening on the grid; later days are your
+                grid&apos;s usual pattern for that hour, so treat them as a
+                sketch rather than a promise.
               </p>
               <Card bleed>
                 <ul className="divide-y divide-hairline">

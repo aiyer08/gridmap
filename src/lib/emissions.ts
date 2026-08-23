@@ -148,10 +148,7 @@ export function mixFromGeneration(
 ): FuelMix {
   const mix: FuelMix = {};
   let total = 0;
-  for (const [fuel, mwh] of Object.entries(generation) as [
-    FuelType,
-    number,
-  ][]) {
+  for (const mwh of Object.values(generation)) {
     if (!Number.isFinite(mwh) || mwh <= 0) continue;
     total += mwh;
   }

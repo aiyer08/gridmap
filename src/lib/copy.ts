@@ -72,7 +72,6 @@ export function verdictForNow(
 ): Verdict {
   const pct = now.cleanlinessPercentile ?? percentileWithin(now.gCO2PerKWh, stats);
   const absolute = absoluteLabel(now.gCO2PerKWh);
-  const tone: Tone = pct >= 66 ? "clean" : pct >= 33 ? "okay" : "dirty";
 
   if (pct >= 85) {
     return {

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 import { cn, focusRing } from "./cn";
+import { useHydrated } from "./useHydrated";
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -43,11 +44,10 @@ export function Sheet({
 }: SheetProps) {
   const reduce = useReducedMotion();
   const id = React.useId();
-  const [mounted, setMounted] = React.useState(false);
+  // A portal needs a real document, so hold off until we're on the client.
+  const mounted = useHydrated();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const returnFocus = React.useRef<HTMLElement | null>(null);
-
-  React.useEffect(() => setMounted(true), []);
 
   // Scroll lock + focus management + Escape + Tab trap.
   React.useEffect(() => {

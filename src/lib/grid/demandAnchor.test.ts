@@ -23,12 +23,13 @@ const TIMEZONE = "America/Los_Angeles";
 function makeProfile(): RegionProfile {
   // Flat 200 g/kWh and flat 30,000 MWh normals so any movement in the output is
   // unambiguously the demand correction and not the diurnal shape.
-  const slots = Array.from({ length: HOURS_PER_WEEK }, () => ({
+  const slots = Array.from({ length: HOURS_PER_WEEK }, (_, hourOfWeek) => ({
+    hourOfWeek,
     gCO2PerKWh: 200,
     fuelMix: { gas: 0.6, solar: 0.4 },
     carbonFreeShare: 0.4,
     weight: 10,
-    samples: 40,
+    sampleCount: 40,
   }));
   return {
     ba: "TEST",

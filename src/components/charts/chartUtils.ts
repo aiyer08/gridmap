@@ -275,8 +275,17 @@ export function niceTicks(max: number, count = 3): number[] {
   const raw = max / count;
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
+  /**
+   * Round the top *up* to a whole step so the axis always contains the data.
+   * Stopping at the last tick below `max` silently clipped the series: a
+   * 362 gCO2/kWh evening peak against a 391 requested top produced ticks of
+   * [0, 200], and every hour above 200 was clamped to a flat line across the
+   * top of the chart — the dirtiest stretch of the week rendered as its
+   * calmest.
+   */
+  const top = Math.ceil(max / step) * step;
   const ticks: number[] = [];
-  for (let v = 0; v <= max + step * 0.001; v += step) ticks.push(Math.round(v));
+  for (let v = 0; v <= top + step * 1e-9; v += step) ticks.push(Math.round(v));
   return ticks;
 }
 

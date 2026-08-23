@@ -120,13 +120,18 @@ export function GridNowCard({
               </span>
               <span className="text-xs text-ink-3">of this week</span>
             </dd>
+            {/* Thresholds match verdictForNow so the two lines never disagree. */}
             <dd className="mt-0.5 flex items-center gap-1 text-xs text-ink-4">
-              {percentile >= 50 ? (
+              {percentile >= 66 ? (
                 <TrendingDown className="size-3" />
               ) : (
                 <TrendingUp className="size-3" />
               )}
-              {percentile >= 50 ? "a good moment" : "worth waiting"}
+              {percentile >= 66
+                ? "a good moment"
+                : percentile >= 33
+                  ? "middling"
+                  : "worth waiting"}
             </dd>
           </div>
         </dl>
@@ -136,6 +141,11 @@ export function GridNowCard({
             <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
               <h3 className="text-sm font-medium">
                 What&apos;s powering your grid
+                {isLive ? (
+                  <span className="ml-1.5 font-normal text-ink-4">
+                    (typical for this hour)
+                  </span>
+                ) : null}
               </h3>
               <p className="text-xs text-ink-3">
                 {describeMix(snapshot.now.fuelMix)}

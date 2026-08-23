@@ -32,7 +32,29 @@ import { hourOfSlot, localDayKey, MS_PER_HOUR, zonedParts } from "./time";
 /** Below this, "waiting" isn't a real saving — it's noise in our own forecast. */
 export const NOW_IS_GREAT_THRESHOLD = 5;
 /** Offer an earlier window when it's within this many points of the best one. */
-export const EARLIER_BIAS_POINTS = 1.5;
+export const EARLIER_BIAS_POINTS = 3;
+
+/**
+ * How far ahead we're willing to *recommend*, as opposed to display.
+ *
+ * The forecast covers a week, but only the first day or so is conditioned on
+ * what's actually happening: live demand plus EIA's day-ahead demand forecast
+ * reach about 16 hours out, and beyond that every hour is the grid's typical
+ * pattern for that hour of the week.
+ *
+ * That asymmetry quietly biases the recommendation. On a hot day the near-term
+ * hours get corrected *upward* to reflect real conditions while next Saturday
+ * stays at its long-run average, so the cleanest-looking window in the series is
+ * almost always the furthest one out. Left alone, the app told a Sunday
+ * afternoon visitor to run their dishwasher the following Saturday for a 32%
+ * saving — a comparison between a measured today and an idealised someday, and
+ * useless advice for anyone holding a basket of laundry.
+ *
+ * Two days keeps recommendations inside the range where the forecast has real
+ * skill. The full week is still shown, and `dailyBest` still covers it for
+ * planning.
+ */
+export const RECOMMEND_HORIZON_HOURS = 48;
 /** Nudge against stacking every suggestion on one day. */
 export const SAME_DAY_PENALTY_POINTS = 2;
 /** Keep suggestions this far apart so they're genuinely different choices. */
@@ -44,7 +66,10 @@ export interface PlanOptions {
   /** How many windows to offer. */
   count?: number;
   minSeparationHours?: number;
-  /** Only consider windows starting within this many hours. */
+  /**
+   * Only consider windows starting within this many hours.
+   * Defaults to `RECOMMEND_HORIZON_HOURS` — see the note there.
+   */
   horizonHours?: number;
   earlierBiasPoints?: number;
   sameDayPenaltyPoints?: number;
@@ -344,7 +369,7 @@ export function planWindows(
 
   const baselineGrams = appliance.kWhPerRun * baselineAvg;
   const horizon = Math.min(
-    options.horizonHours ?? series.length,
+    options.horizonHours ?? RECOMMEND_HORIZON_HOURS,
     series.length - span + 1,
   );
 

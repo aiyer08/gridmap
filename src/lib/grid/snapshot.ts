@@ -48,7 +48,7 @@ import {
 import { fetchElectricityMaps } from "./electricityMaps";
 import { resolveProfile, type ProfileTier, type ResolveProfileOptions } from "./profileStore";
 import { cleanlinessPercentile, clamp, round, seriesStats } from "./stats";
-import { addHours, floorToHourUtc, HOURS_PER_WEEK, MS_PER_HOUR, zonedParts } from "./time";
+import { floorToHourUtc, HOURS_PER_WEEK, MS_PER_HOUR, zonedParts } from "./time";
 import type { FetchLike, RegionProfile } from "./types";
 import { fetchWattTime, type WattTimeCredentials } from "./wattTime";
 

@@ -75,7 +75,7 @@ export function CarbonRibbon({
 
   const ticks = React.useMemo(() => {
     const top = scale.max * 1.08;
-    return niceTicks(top, 3);
+    return niceTicks(top, 4);
   }, [scale.max]);
   const domainTop = ticks[ticks.length - 1] || 1;
 

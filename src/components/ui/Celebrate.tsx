@@ -63,8 +63,12 @@ export function Celebrate({
 }: CelebrateProps) {
   const reduce = useReducedMotion();
   const [particles, setParticles] = React.useState<Particle[]>([]);
+  // Keep the latest callback without making it an effect dependency — writing
+  // to a ref during render is not allowed.
   const doneRef = React.useRef(onDone);
-  doneRef.current = onDone;
+  React.useEffect(() => {
+    doneRef.current = onDone;
+  }, [onDone]);
 
   React.useEffect(() => {
     if (runKey === null || runKey === undefined) return;
@@ -94,6 +98,10 @@ export function Celebrate({
       };
     });
 
+    // A burst is an imperative animation fired by `runKey` changing, and the
+    // particles carry randomness plus a teardown timer, so they can't be
+    // derived during render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setParticles(next);
     const timer = setTimeout(() => {
       setParticles([]);

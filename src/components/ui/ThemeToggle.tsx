@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { cn, focusRing } from "./cn";
+import { useHydrated, useStoredString } from "./useHydrated";
 import { Tooltip } from "./Tooltip";
 
 export type ThemeChoice = "system" | "light" | "dark";
@@ -47,23 +48,15 @@ export function ThemeToggle({
   variant = "cycle",
   size = "md",
 }: ThemeToggleProps) {
-  const [choice, setChoice] = React.useState<ThemeChoice>("system");
-  const [ready, setReady] = React.useState(false);
-
-  // Read the persisted value after mount — the server can't know it.
-  React.useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem(THEME_STORAGE_KEY);
-    } catch {
-      stored = null;
-    }
-    setChoice(stored === "light" || stored === "dark" ? stored : "system");
-    setReady(true);
-  }, []);
+  // The persisted choice lives in localStorage, which the server can't see, so
+  // it's read as an external store: one render pass, and no mismatch on hydrate.
+  const [stored, setStored] = useStoredString(THEME_STORAGE_KEY);
+  const ready = useHydrated();
+  const choice: ThemeChoice =
+    stored === "light" || stored === "dark" ? stored : "system";
 
   const set = (next: ThemeChoice) => {
-    setChoice(next);
+    setStored(next === "system" ? null : next);
     apply(next);
   };
 

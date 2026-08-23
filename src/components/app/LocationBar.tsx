@@ -43,9 +43,14 @@ export function LocationBar({
   const [picking, setPicking] = useState(false);
   const [regions, setRegions] = useState<RegionOption[]>([]);
 
-  useEffect(() => {
+  // Reset the field when the saved ZIP changes underneath us (another tab, or a
+  // region override clearing it). Adjusting state during render is the pattern
+  // React recommends for this over a sync-in-an-effect.
+  const [lastZip, setLastZip] = useState(zip);
+  if (zip !== lastZip) {
+    setLastZip(zip);
     setDraft(zip ?? "");
-  }, [zip]);
+  }
 
   useEffect(() => {
     if (!picking || regions.length > 0) return;
