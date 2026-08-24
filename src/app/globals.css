@@ -168,12 +168,17 @@
   /* Surfaces: warm creams, not neutral greys. Sampled from the reference's
      #fffefb / #fff9ee / #f8f4f0 family — the whole app should feel like paper
      under warm light rather than a dashboard. */
-  --gm-page: #fdf8f0;
-  --gm-surface: #fffefb;
-  --gm-surface-2: #f8f2e8;
-  --gm-surface-3: #f1e9dc;
-  --gm-hairline: #e8ded794;
-  --gm-border: #ded2c4;
+  /* The page sits a step deeper than a card so "paper on paper" actually
+     reads. With cards flattened to hairline-only (no shadow), page and card
+     being 2 points apart left them with no perceptible boundary at all. */
+  --gm-page: #f6eee1;
+  --gm-surface: #fffdf8;
+  --gm-surface-2: #f4ebdd;
+  --gm-surface-3: #ece0ce;
+  /* Solid, not 58% alpha — the hairline is doing the whole job of defining a
+     card now, so it has to be visible on cream. */
+  --gm-hairline: #e0d2bf;
+  --gm-border: #d3c3ac;
   --gm-border-strong: #c9b9a6;
 
   /* Ink is a warm near-black (#201515 family), never a cold grey. */
