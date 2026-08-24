@@ -469,3 +469,221 @@ future correction.
 later verification used direct fetches against known primary sources
 (eia.gov, epa.gov, energystar.gov, watttime.org). Where that was not possible,
 the gap is marked above rather than papered over.*
+
+---
+
+## Verification pass — 23 August 2026
+
+An adversarial re-check of the changes above **after they were applied to the
+code**, done against primary sources rather than trusting this document's own
+reasoning. Ordered most severe first. Overall verdict up front: **the
+direction and rough magnitude of the coal/gas/oil correction are right.** No
+numeric factor is wrong in direction or by an order of magnitude. What's wrong
+is smaller: one persisted mis-citation, one arithmetic slip, and some
+overclaimed certainty in the reasoning.
+
+### What's actually wrong
+
+1. **The oil factor's code comment still mis-cites AR5, even after the value
+   was fixed.** `src/lib/emissions.ts`'s new header comment reads: `oil 2.46
+   lb/kWh = 1116 g/kWh combustion (AR5 lifecycle said 650)`. This attributes
+   650 to "AR5 lifecycle." **AR5 Annex III has no oil/petroleum category at
+   all** — confirmed independently via two sources (a general knowledge fetch
+   and Wikipedia's reproduction of the AR5 Table A.III.2 figures, both
+   agreeing AR5 lists coal, gas, biomass, solar, geothermal, hydro, wind and
+   nuclear, with oil absent because it is under 2% of global generation and
+   was never modelled). This exact problem was finding **#5** in the original
+   review ("fix the citation — AR5 has no oil category"), and finding #5 was
+   the one recommendation from this document that **did not make it into the
+   applied change** — the number moved (650 → 1,200) but the comment's false
+   attribution moved with it. Fix: reword the oil line to something like `oil
+   2.46 lb/kWh = 1116 g/kWh combustion (the old 650 wasn't from AR5 — AR5 has
+   no oil category)`. Same mis-citation also still appears in
+   `src/app/tips/page.tsx` (owned by a concurrent editing pass, not fixed
+   here).
+
+2. **Coal's stated upstream allowance doesn't match the number it's supposed
+   to justify.** The code comment says `coal 1048 + ~60 -> 1100`, but
+   `1048 + 60 = 1108`, not 1100. The allowance actually implied by the shipped
+   value is `1100 - 1048 = 52`, not "~60." This isn't a new error introduced
+   during implementation — this document's own §2c recommendation ("1,048
+   plus ~60-80 upstream") already doesn't bracket 1,100 (its own range implies
+   1,108-1,128). The oil side is fine by comparison: `1200 - 1116 = 84`, close
+   enough to the claimed "~85." Net effect on the final number is small (a
+   handful of g/kWh out of 1,100), so this is a precision defect in the
+   reasoning, not a magnitude error worth re-deriving — but it means the code
+   comment's arithmetic, read literally, doesn't reproduce the constant next
+   to it.
+
+3. **Only the gas upstream allowance (91 g/kWh) is actually derived from a
+   published number.** It comes from AR5's own CCGT lifecycle-minus-combustion
+   delta (490 − 399, both independently re-verified this pass — see below).
+   Coal's (~52-60) and oil's (~84-85) allowances are not derived the same way
+   — AR5 gives no coal-specific upstream/combustion split usable the same way,
+   and AR5 has no oil entry at all to derive anything from. They are
+   defensible **order-of-magnitude** estimates (upstream mining/transport is
+   commonly cited as a low-single-digit-to-low-teens percentage of coal's
+   lifecycle total in LCA literature; oil's extraction-and-refining share is
+   typically cited higher), but they were sized to land on round output
+   numbers (1,100, 1,200) rather than derived from a citation the way gas's
+   was. This isn't "plucked from air" — the order of magnitude is right and
+   the direction is unambiguous — but it is a materially weaker citation than
+   the gas number sitting right next to it, and the code comments present all
+   three with the same confidence.
+
+4. **The "lifecycle below combustion is impossible" framing overclaims.** It
+   appears in `src/lib/emissions.ts`, `src/app/tips/page.tsx`, and (before this
+   pass) `docs/METHODOLOGY.md`. Checked against AR5 directly: AR5's 820 for
+   coal is *not* internally inconsistent — it is a self-consistent median for
+   the newer, more efficient plants dominant in the global LCA literature
+   sample it was drawn from; for **those** plants, lifecycle ≥ combustion holds
+   fine. What actually happened is a population mismatch: the app was using a
+   global-modern-plant median to stand in for the specific, older, US fleet,
+   and *for that fleet* the number was too low to be its lifecycle figure.
+   That's a real and sufficient reason to switch to a US-specific factor — the
+   practical conclusion is not in question — but "impossible" states it as a
+   contradiction in AR5's own arithmetic, which it is not. `METHODOLOGY.md` §4
+   has been reworded in this pass to state the caveat explicitly;
+   `emissions.ts` and `tips/page.tsx` still use the stronger, slightly
+   overclaiming phrasing (reported to the human, not edited — see file-ownership
+   rules for this pass).
+
+### What's confirmed correct (checked against primary sources this pass)
+
+- **EIA FAQ #74 figures**, fetched and parsed from raw HTML directly (not the
+  auto-summarized version, which garbled a units footnote on first pass):
+  2023, coal 2.31 lb/kWh, natural gas 0.96 lb/kWh, petroleum 2.46 lb/kWh,
+  **combustion-only**, for **utility-scale, electricity-only plants — CHP is
+  explicitly excluded** by the page's own footnote ("Combined heat and power
+  plants are excluded because some of their CO₂ emissions are from fuel
+  consumption for heating purposes"). This resolves the scope question the
+  brief raised: these are *not* contaminated by CHP's heat-allocated fuel use.
+  Unit conversion checks: 2.31 × 453.59237 = 1,047.8 → 1,048 ✅; 2.46 ×
+  453.59237 = 1,115.9 → 1,116 ✅; 0.96 × 453.59237 = 435.4 → 435 ✅.
+- **Natural gas carbon coefficient**: 52.91 kg CO₂/MMBtu confirmed directly
+  from EIA's raw coefficients table (`Natural Gas 120.85 [lb/Mcf] 54.81
+  [kg/Mcf] 116.65 [lb/MMBtu] 52.91 [kg/MMBtu]`). Note for future verifiers: an
+  automated fetch of this page mislabeled the lb/MMBtu column as "kilograms,"
+  which would have looked like a contradiction (116.65 vs. the app's 52.91) —
+  it isn't; they're the same figure in different units.
+- **CCGT heat rate**: 7,548 Btu/kWh confirmed as EIA Electric Power Annual
+  Table 8.2's 2024 capacity-weighted figure. Steam turbine 10,337 and
+  simple-cycle peaker 10,999 Btu/kWh also confirmed for 2024.
+- **AR5 Annex III figures**: coal (pulverized coal) median 820 gCO₂eq/kWh
+  (range 740–910), gas combined-cycle median 490 (range 410–650), confirmed
+  via two independent sources. No oil/petroleum category exists in the table.
+  (NREL's LCA Harmonization project, which underlies these AR5 figures, could
+  not be reached this pass — `nrel.gov` failed DNS resolution twice — marked
+  **unverified**, not chased further.)
+- **EIA-930 fuel-type facet list**: independently re-queried live
+  (`api.eia.gov/v2/electricity/rto/fuel-type-data/facet/fueltype`) and got the
+  same 16 codes the `emissions.ts` comment claims: BAT, COL, GEO, NG, NUC, OES,
+  OIL, OTH, PS, SNB, SUN, UES, UNK, WAT, WND, WNB.
+- **The Kentucky (LGEE) and Santee Cooper (SC) worst-case numbers are not
+  absurd.** Queried live EIA-930 data directly for both respondents (1–8 Aug
+  2026): Santee Cooper ran ~68.6% coal / 24.1% gas / 3.9% solar / 2.5% other /
+  1.0% hydro; LGEE ran ~77.0% coal / 21.2% gas / 1.2% hydro / 0.6% solar. Both
+  match the committed profiles' stored fuel mixes closely. Santee Cooper's
+  profile shows **zero nuclear** despite Santee Cooper owning a one-third
+  share of V.C. Summer — checked and this is not a data bug: V.C. Summer is
+  operated by Dominion/SCE&G and its generation is reported under BA code
+  `SCEG`, not `SC`, regardless of Santee Cooper's ownership stake. A
+  cross-check against Kentucky's own state-level EIA data (state-electricity-
+  profiles emissions-by-fuel + electric-power-operational-data, 2024) gives a
+  state-wide combustion-only rate of ~799 g/kWh blended across all Kentucky
+  utilities; LGEE specifically running higher than that (mid-900s, lifecycle)
+  is consistent with LGEE's coal share (77%) being well above the state
+  average (67.5%). **The 925–973 (LGEE) and 835–944 (SC) figures are a
+  faithful consequence of real, extremely coal-heavy fuel mixes, not an
+  artefact of the factor correction being too aggressive.**
+- **`derive-bands.ts` re-run.** Current output: veryClean → 120 (gap
+  83–157), clean → 304 (gap 296–313), moderate → 484 (gap 468–500), dirty →
+  718 (gap 629–806). The shipped `ABSOLUTE_BANDS` (150, 300, 480, 700) all sit
+  inside those same gaps — the "each edge sits in a gap where no committed
+  profile's hourly mean falls" claim holds exactly on re-run.
+- **Profile consistency sweep.** Recomputed hour-0 intensity from each of the
+  25 committed profiles' own stored `fuelMix` against the current
+  `LIFECYCLE_FACTORS`, and compared to the stored `gCO2PerKWh`. 24 of 25
+  matched to within rounding; the one exception, CISO (stored 276.3 vs.
+  recomputed 284.1), is fully explained by the geothermal special case (`GEO`
+  priced at 38 rather than the "other" bucket's 300) — not visible from the
+  aggregated `fuelMix`, and exactly the ~7–8 g/kWh CAISO effect the code
+  comments already describe. All 25 profiles carry `generatedAt` timestamps
+  from the same 2026-08-24 run, i.e. they were rebuilt together, after the
+  factor change — not stale. Confirmed with old-factor recomputation too: had
+  the profiles still used the pre-correction factors, LGEE would read ~745 and
+  SC ~726, both far from what's actually stored (973, 940) — so this is not a
+  case of new bands papering over old-factor data.
+- **Full test suite**: `npx vitest run` → 585/585 passing, including
+  `copy.test.ts`'s `ABSOLUTE_BANDS`/`absoluteLabel` assertions, which have
+  themselves been updated to the new bands and new LGEE/SC fixture values.
+  `DIRECT_FACTORS` (flagged as dead-and-wrong in §2d) has been deleted
+  entirely — confirmed via `grep -rn "DIRECT_FACTORS" src` returning nothing.
+- **Appliance physics.** Water heater: `40 × 8.34 × 70 ÷ 3412 = 6.84` kWh,
+  correctly rounds to the shipped `7`; a ~70°F rise (e.g. 58°F inlet → 125°F
+  setpoint) is a mainstream design assumption for a "full" reheat, not a
+  cherry-picked worst case. Dryer: shipped 1 h sits inside the cited 40–70 min
+  range for real cycles. Lights-off habit: `3 × 9 W × 4 h = 0.108` kWh,
+  correctly rounds to `0.1`. Thermostat wording ("roughly 2–5%") correctly
+  updated in both `copy.ts` and `appliances.ts`. Pool pump/oven left unchanged,
+  consistent with those being optional/low-priority in the original review.
+
+### One structural observation on the bands (not a numeric error)
+
+`PACE` (PacifiCorp East, Utah/Wyoming) has an unusually wide hourly-mean range,
+500–806 g/kWh — wider than any other single region. The shipped `dirty: 700`
+edge (and the freshly re-derived 718) both fall **inside** that single
+region's own range, which is exactly the failure mode `derive-bands.ts`'s own
+docstring says the widest-gap search is meant to avoid ("a band edge never
+splits a single grid's typical range down the middle"). In practice this is
+probably the right outcome, not a bug: PACE genuinely has both wind-driven
+clean hours and coal-baseload dirty hours, and giving those different labels
+is the point of the app. But the algorithm's stated guarantee doesn't
+actually hold once one region's range is wide enough to span past several
+other regions' entire ranges — worth knowing if PACE's mix shifts and someone
+re-runs the script expecting the "never splits a single grid" property to be
+load-bearing.
+
+### Doc-vs-code contradictions found and fixed in this pass
+
+All of the following were in `docs/METHODOLOGY.md` and described the
+**pre-correction** state (coal 820, gas 490, oil 650) as if it were still
+current, or asserted the correction hadn't shipped yet. Fixed in this pass:
+
+- §3's factor table listed 820/490/650 as "Current factor" — updated to
+  1,100/530/1,200 with corrected status notes.
+- §4's header said "the constants have not changed yet" — false, and reworded.
+- §4's comparison table listed 820/490/650 as "App's current *lifecycle*
+  factor" — updated to show old-vs-current side by side.
+- §4's gas derivation had a small arithmetic slip: `490 − 399 ≈ 90` (should be
+  the exact `91`) propagating to `435 + 90 ≈ 525` (should be `≈ 526`) — fixed;
+  `emissions.ts`'s own comment already had this right at 91.
+- §6's appliance table still listed water heater at `4 kWh` (flagged "too low
+  for its own label") and dryer at `1.5 h` (flagged "duration too long") —
+  both are stale; the code already has `7` and `1 h`. Updated to reflect the
+  applied fix.
+- §8's limitations list described coal/oil/gas as *currently* biasing
+  coal-heavy regions and the evening peak cleaner than reality — reworded to
+  describe the corrected state and the narrower residual risk (still one
+  fleet-average gas number applied to every hour, so the evening-peak/off-peak
+  *shape* is still not modelled, even though the *average* is now right).
+- §10's changelog said the science-review's constant changes were
+  deliberately **not** reflected in the code — updated to say they have been
+  applied, with this verification pass appended here.
+
+`src/app/tips/page.tsx` (owned by a concurrent editing pass, not fixed here)
+still carries the same "impossible" overclaim as `emissions.ts` — see finding
+#4 above. No other `src/` files were edited as part of this pass, per the
+file-ownership rules for this review.
+
+### Bottom line
+
+The correction was the right call, in the right direction, and the primary
+numbers behind it (EIA's 2023 lb/kWh figures, the 52.91 kg CO₂/MMBtu
+coefficient, the 7,548 Btu/kWh CCGT heat rate, AR5's 820/490 medians and its
+lack of an oil category) all check out against primary sources. Nothing here
+would change the shipped values (coal 1,100, gas 530, oil 1,200) — the issues
+found are a leftover mis-citation, a small arithmetic inconsistency in how the
+coal allowance is described, and reasoning that states a modelling judgment
+call ("use a US-specific number") with more certainty ("impossible") than it
+actually has.

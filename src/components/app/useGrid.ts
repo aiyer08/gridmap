@@ -20,6 +20,8 @@ export interface GridState {
 }
 
 export interface UseGridResult extends GridState {
+  /** True when we have no location yet and are waiting for one. */
+  needsLocation: boolean;
   zip: string | null;
   /** Set when the user has manually overridden the detected region. */
   baOverride: string | null;
@@ -56,15 +58,17 @@ export function useGrid(): UseGridResult {
 
   useEffect(() => {
     if (!ready) return;
+    // Nothing to show until we know where they are. Defaulting to some region
+    // and captioning it "just an example" invites someone in Texas to read
+    // California's numbers and act on them, so we ask first instead.
+    if (!zip && !baOverride) return;
     let live = true;
 
     const query = baOverride
       ? `ba=${encodeURIComponent(baOverride)}`
-      : zip
-        ? `zip=${encodeURIComponent(zip)}`
-        : "";
+      : `zip=${encodeURIComponent(zip!)}`;
 
-    fetch(`/api/grid${query ? `?${query}` : ""}`)
+    fetch(`/api/grid?${query}`)
       .then(async (response) => {
         const body = await response.json();
         if (!live) return;
@@ -129,8 +133,13 @@ export function useGrid(): UseGridResult {
     [state.snapshot, appliance],
   );
 
+  const needsLocation = ready && !zip && !baOverride;
+
   return {
-    ...state,
+    // Derived rather than pushed into state from the effect: with no location
+    // there is nothing loading, and setting that in an effect would cascade.
+    ...(needsLocation ? { ...state, snapshot: null, loading: false } : state),
+    needsLocation,
     zip,
     baOverride,
     applianceId,

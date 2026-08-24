@@ -100,12 +100,14 @@ export default function TipsPage() {
         </p>
         <p className="mt-2 text-sm text-ink-3">
           The carbon-free rows are IPCC AR5 medians, the same basis Electricity
-          Maps uses. The three fossil rows are <strong>US-specific</strong>
-          instead, because AR5&apos;s global medians for coal and oil are
-          actually <em>lower</em> than what the US fleet measurably emits from
-          combustion alone — which can&apos;t be right, since lifecycle has to
-          include combustion. So those three start from EIA&apos;s measured US
-          generation and add an upstream allowance.
+          Maps uses. The three fossil rows are <strong>US-specific</strong>{" "}
+          instead. AR5&apos;s figures are world averages weighted toward newer,
+          more efficient plants, and the US fleet — coal especially — is older
+          than that. Using the global number would have told you US coal emits
+          less than US coal plants measurably do. So those three start from what
+          the EIA measured US generation actually emitting, plus an allowance for
+          mining, drilling and transport. (AR5 has no oil category at all, so
+          that row is entirely US-measured.)
         </p>
         <Card bleed className="mt-4">
           <table className="w-full text-sm">
@@ -227,13 +229,14 @@ export default function TipsPage() {
           </li>
           <li>
             <span className="font-medium text-ink">
-              We use average emissions, not marginal.
+              We use the grid&apos;s overall average, not a per-second number.
             </span>{" "}
-            The strictly correct question is &ldquo;what does the *next*
-            kilowatt-hour cause?&rdquo;, which can differ from the grid average
-            and occasionally even points the other way. Average intensity is what
-            is freely published for every US region, and it is far easier to
-            explain, so that is what we use.
+            The stricter question would be: what does the very next bit of
+            electricity you draw actually cause, right this second? Experts
+            call that the &ldquo;marginal&rdquo; rate, and it can occasionally
+            differ from the average — rarely, even in the opposite direction.
+            But the average is the number that&apos;s freely published for
+            every US region, so it&apos;s the one we can show our work for.
           </li>
           <li>
             <span className="font-medium text-ink">

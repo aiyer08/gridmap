@@ -8,31 +8,43 @@ import type { FuelMix, FuelType } from "./types";
  * wind and nuclear come out small but non-zero — more honest, and easier to
  * explain than a zero.
  *
- * The three fossil values are **US-fleet-specific and deliberately not AR5**,
- * because AR5's medians are global figures for representative modern plants and
- * two of them turned out to be *lower than the US fleet's measured
- * combustion-only* emissions — which is impossible for the same fleet, since
- * lifecycle must include combustion. Using EIA's measured 2023 US generation
- * (Electric Power Annual / EIA FAQ, converted at 453.59237 g/lb):
+ * The three fossil values are **US-fleet-specific and deliberately not AR5**.
+ * AR5's medians are global figures for a sample dominated by newer, more
+ * efficient plants; the US fleet — particularly its coal fleet — is older and
+ * less efficient than that sample. The mismatch shows up starkly against EIA's
+ * measured 2023 US generation (Electric Power Annual / EIA FAQ #74,
+ * combustion-only, CHP excluded, converted at 453.59237 g/lb):
  *
- *   coal 2.31 lb/kWh = 1048 g/kWh combustion   (AR5 lifecycle said 820)
- *   oil  2.46 lb/kWh = 1116 g/kWh combustion   (AR5 lifecycle said 650)
- *   gas  0.96 lb/kWh =  435 g/kWh combustion
+ *   coal 2.31 lb/kWh = 1048 g/kWh combustion   (AR5's global lifecycle median: 820)
+ *   oil  2.46 lb/kWh = 1116 g/kWh combustion   (AR5 has no oil category at all)
+ *   gas  0.96 lb/kWh =  435 g/kWh combustion   (AR5 CC lifecycle median: 490)
+ *
+ * Note what this is and isn't. AR5's 820 is not self-contradictory — for the
+ * plants it describes, lifecycle really does exceed combustion. The problem is a
+ * *population mismatch*: using a global-modern-plant median to stand in for the
+ * specific US fleet put our "lifecycle" coal figure below what US coal plants
+ * measurably emit from combustion alone. That's reason enough to switch.
  *
  * So each fossil factor is the measured US combustion figure plus an upstream
  * (extraction, processing, transport, construction) allowance:
  *
- *   coal 1048 + ~60  -> 1100
- *   oil  1116 + ~85  -> 1200
- *   gas   435 + ~91  ->  530
+ *   coal 1048 + 52 -> 1100
+ *   oil  1116 + 84 -> 1200
+ *   gas   435 + 91 ->  530
  *
- * The gas uplift of 91 is AR5's own implied lifecycle premium over combined-cycle
- * combustion (490 - 399, using EIA's 7,548 Btu/kWh CCGT heat rate and its
- * 52.91 kg CO2/MMBtu carbon coefficient). Applying it to the *fleet average*
- * rather than to CCGT alone matters here, because EIA reports every gas plant
- * under one `NG` code — combined-cycle at ~399 g/kWh combustion alongside
- * simple-cycle peakers at ~582 — and peakers are exactly what covers the evening
- * ramp this app tells people to avoid. A flat 490 understated that peak.
+ * Honest about the provenance of those three allowances: **only gas's is
+ * derived.** 91 is AR5's own implied lifecycle premium over combined-cycle
+ * combustion (490 - 399, using EIA Electric Power Annual Table 8.2's 7,548
+ * Btu/kWh CC heat rate and EIA's 52.91 kg CO2/MMBtu gas coefficient). The coal
+ * and oil allowances are order-of-magnitude estimates rounded to a whole
+ * hundred, not figures traceable to a published upstream study. They are the
+ * weakest link in this file and the first thing to improve.
+ *
+ * Applying the gas premium to the *fleet* average rather than to CC alone is the
+ * point: EIA reports every gas plant under one `NG` code — combined cycle at
+ * ~399 g/kWh combustion alongside simple-cycle peakers at ~582 — and peakers are
+ * exactly what covers the evening ramp this app tells people to avoid. A flat
+ * 490 understated that peak.
  *
  * What we deliberately do *not* do is vary the gas factor by hour. It would be
  * physically right, but EIA-930 carries no technology split to condition on;

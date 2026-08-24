@@ -100,7 +100,7 @@ export function verdictForNow(
     return {
       tone: "clean",
       headline: "The grid is cleaner than usual right now",
-      detail: `About ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity — below this week's average for your area.`,
+      detail: `About ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity — below this week's average for your area, and ${absolute} by national standards too.`,
       cleanlinessPercentile: pct,
     };
   }
@@ -108,14 +108,14 @@ export function verdictForNow(
     return {
       tone: "okay",
       headline: "The grid is about average right now",
-      detail: `Around ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity. There are cleaner hours coming up — worth a look before you start something big.`,
+      detail: `Around ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity — ${absolute} by national standards, and typical for your own area this week. There are cleaner hours coming up — worth a look before you start something big.`,
       cleanlinessPercentile: pct,
     };
   }
   return {
     tone: "dirty",
     headline: "The grid is running dirty right now",
-    detail: `About ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity — near the top of this week's range. Waiting a few hours makes a real difference.`,
+    detail: `About ${Math.round(now.gCO2PerKWh)} g of CO₂ per unit of electricity — near the top of this week's range, and ${absolute} by national standards too. Waiting a few hours makes a real difference.`,
     cleanlinessPercentile: pct,
   };
 }

@@ -95,6 +95,7 @@ export function GridNowCard({
                 <span className="mx-0.5 text-ink-4">–</span>
                 {Math.round(snapshot.stats.max)}
               </span>
+              <span className="text-xs text-ink-3">g CO₂/kWh</span>
             </dd>
             <dd className="mt-0.5 text-xs text-ink-3">
               cleanest to dirtiest hour

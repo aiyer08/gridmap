@@ -87,8 +87,12 @@ for (const r of rows) {
   );
 }
 
-// Candidate edges are the boundaries between regions, so a band edge never
-// splits a single grid's typical range down the middle.
+// Candidate edges are the boundaries between regions, so an edge lands between
+// grids rather than through the middle of one wherever possible. Note this is a
+// best effort, not a guarantee: a region with an unusually wide range can still
+// straddle an edge. PacifiCorp East (500-806) straddles `dirty: 700`, which is
+// arguably correct anyway, since it genuinely has both wind-clean and coal-dirty
+// hours.
 const edges = rows.flatMap((r) => [r.min, r.max]);
 console.log("\nWidest gaps between real grids, by search window:");
 for (const [label, lo, hi] of [

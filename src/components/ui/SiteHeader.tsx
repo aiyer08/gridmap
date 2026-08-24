@@ -109,7 +109,7 @@ export function SiteFooter({ className }: SiteFooterProps) {
               Grid data comes from the U.S. EIA hourly fuel-mix feed, with
               Electricity Maps and WattTime where they cover your region. Future
               hours are our own estimate, built from a year of history for your
-              balancing authority — not a promise. We show you where the number
+              regional grid — not a promise. We show you where the number
               came from on every screen.
             </p>
           </div>

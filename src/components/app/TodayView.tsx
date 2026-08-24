@@ -16,6 +16,7 @@ import { formatDayLabel, formatGrams } from "@/lib/format";
 import { AppliancePlanner } from "./AppliancePlanner";
 import { GridNowCard } from "./GridNowCard";
 import { LocationBar } from "./LocationBar";
+import { LocationPrompt } from "./LocationPrompt";
 import { useGrid } from "./useGrid";
 
 type Horizon = "24h" | "3d" | "7d";
@@ -51,6 +52,7 @@ export function TodayView() {
           twice as dirty at 7 PM as at 1 PM. Here&apos;s how your grid looks over
           the next week, and when to press start.
         </p>
+        {grid.needsLocation ? null : (
         <div className="mt-5">
           <LocationBar
             region={snapshot?.region ?? null}
@@ -62,7 +64,10 @@ export function TodayView() {
             onRegionChange={grid.setBaOverride}
           />
         </div>
+        )}
       </header>
+
+      {grid.needsLocation ? <LocationPrompt onSubmit={grid.setZip} /> : null}
 
       {grid.error ? (
         <Card>
@@ -83,7 +88,7 @@ export function TodayView() {
         </Card>
       ) : null}
 
-      {!snapshot && !grid.error ? (
+      {!snapshot && !grid.error && !grid.needsLocation ? (
         <div className="space-y-4">
           <Skeleton className="h-56 w-full rounded-xl" />
           <Skeleton className="h-64 w-full rounded-xl" />
@@ -92,19 +97,6 @@ export function TodayView() {
 
       {snapshot ? (
         <div className="space-y-10">
-          {!grid.zip && !grid.baOverride ? (
-            <Card variant="quiet">
-              <CardBody className="text-sm text-ink-3">
-                Showing{" "}
-                <span className="font-medium text-ink">
-                  {snapshot.region.shortName}
-                </span>{" "}
-                as a starting point. Pop your ZIP code in above for your own
-                grid.
-              </CardBody>
-            </Card>
-          ) : null}
-
           <GridNowCard snapshot={snapshot} />
 
           <section aria-labelledby="week-heading">
@@ -245,38 +237,64 @@ export function TodayView() {
   );
 }
 
-/** Where the numbers came from. Shown, not buried, so the app is checkable. */
+/**
+ * Where the numbers came from. Shown, not buried, so the app is checkable —
+ * but shown as a plain sentence first. The full provider-by-provider ledger
+ * (fetch timestamps, fit statistics, which token expired) is real and stays
+ * intact, just tucked behind one click so it doesn't read as a wall of
+ * engineering notes to someone who just wants to trust the number above.
+ */
 function DataProvenance({
   snapshot,
 }: {
   snapshot: NonNullable<ReturnType<typeof useGrid>["snapshot"]>;
 }) {
+  const sourcesInUse = snapshot.providers.filter((p) => p.used).map((p) => p.label);
+
   return (
     <section aria-labelledby="sources-heading" className="border-t border-hairline pt-6">
       <h2 id="sources-heading" className="text-sm font-semibold">
         Where these numbers come from
       </h2>
-      <ul className="mt-3 space-y-2">
-        {snapshot.providers.map((p) => (
-          <li key={p.id} className="flex flex-wrap items-baseline gap-2 text-xs">
-            <Badge tone={p.used ? "clean" : "neutral"} size="sm">
-              {p.used ? "in use" : "not used"}
-            </Badge>
-            <span className="font-medium">{p.label}</span>
-            <span className="text-ink-3">{p.role}</span>
-            {p.detail ? <span className="text-ink-3">— {p.detail}</span> : null}
-          </li>
-        ))}
-      </ul>
-      {snapshot.notes.length > 0 ? (
-        <ul className="mt-3 space-y-1">
-          {snapshot.notes.map((note) => (
-            <li key={note} className="text-xs text-ink-3">
-              {note}
+      <p className="mt-2 text-xs leading-relaxed text-ink-3">
+        Real grid data for {snapshot.region.shortName}
+        {sourcesInUse.length > 0 ? ` (via ${sourcesInUse.join(" and ")})` : ""}.
+        Hours too far out to measure use your grid&apos;s usual pattern for
+        that time of day instead of a specific prediction — never a promise,
+        always our best honest guess.
+      </p>
+      <details className="mt-3">
+        <summary
+          className={cn(
+            "cursor-pointer text-xs font-medium text-ink-3 underline decoration-dotted",
+            "underline-offset-2 hover:text-ink",
+            focusRing,
+          )}
+        >
+          Show exactly where each number came from
+        </summary>
+        <ul className="mt-3 space-y-2">
+          {snapshot.providers.map((p) => (
+            <li key={p.id} className="flex flex-wrap items-baseline gap-2 text-xs">
+              <Badge tone={p.used ? "clean" : "neutral"} size="sm">
+                {p.used ? "in use" : "not used"}
+              </Badge>
+              <span className="font-medium">{p.label}</span>
+              <span className="text-ink-3">{p.role}</span>
+              {p.detail ? <span className="text-ink-3">— {p.detail}</span> : null}
             </li>
           ))}
         </ul>
-      ) : null}
+        {snapshot.notes.length > 0 ? (
+          <ul className="mt-3 space-y-1">
+            {snapshot.notes.map((note) => (
+              <li key={note} className="text-xs text-ink-3">
+                {note}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </details>
       <p className="mt-3 text-xs text-ink-3">
         <Link href="/tips#how-it-works" className="underline underline-offset-2">
           How the forecast is built

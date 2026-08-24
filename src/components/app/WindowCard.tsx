@@ -101,7 +101,8 @@ export function WindowCard({
           <p className="text-xs leading-relaxed text-ink-3">
             {whyThisWindow(runWindow)}{" "}
             <span className="text-ink-3">
-              Grid runs about {Math.round(runWindow.avgIntensity)} g/kWh then.
+              Grid runs about {Math.round(runWindow.avgIntensity)} g of CO₂
+              per unit of electricity then.
             </span>
           </p>
 

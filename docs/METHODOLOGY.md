@@ -83,9 +83,9 @@ easier to explain than pretending they are free.
 
 | Fuel | Current factor (gCO₂e/kWh) | Basis | Status of that citation |
 |---|---|---|---|
-| Coal | 820 | IPCC AR5 pulverised-coal lifecycle median | Matches AR5, **but understates the US fleet** — see §4 |
-| Natural gas | 490 | IPCC AR5 gas *combined-cycle* lifecycle median | Matches AR5, **but understates the US fleet** — see §4 |
-| Oil | 650 | **Not from AR5.** AR5 Annex III has no oil category (oil is a rounding error in global generation, so it was not modelled). | **Miscited, and understates the US fleet** — see §4 |
+| Coal | 1,100 | US-fleet combustion (EIA, 2023) plus an upstream allowance — **not** AR5's 820 | Corrected from the AR5 global median, which understated the US fleet — see §4 |
+| Natural gas | 530 | US-fleet combustion (EIA, 2023) plus AR5's implied CCGT upstream premium — **not** AR5's CCGT-only 490 | Corrected from a combined-cycle-only median applied to the whole fleet — see §4 |
+| Oil | 1,200 | US-fleet combustion (EIA, 2023) plus an upstream allowance — **not** AR5, which has no oil category | Corrected; the old 650 was also mis-cited as AR5 (AR5 has no oil entry) — see §4 |
 | Nuclear | 12 | IPCC AR5 median | Consistent with the widely reproduced AR5 table *(unverified against the primary PDF — ipcc.ch returned HTTP 403 for the Annex III PDF on 23 Aug 2026)* |
 | Hydro | 24 | IPCC AR5 median | As above. Note AR5's hydro range is enormous (some tropical reservoirs exceed 2,000 g/kWh); 24 is the median, not a guarantee. |
 | Solar | 48 | IPCC AR5 utility-scale PV median | As above |
@@ -110,33 +110,45 @@ changes the headline by only a few g/kWh; the case where it mattered
 
 ---
 
-## 4. Where the factor table is wrong: US fleet vs global median
+## 4. Why the factor table is US-fleet-specific, not the AR5 global median
 
-This is the most substantive finding of the August 2026 review, and it is
-documented here because the constants have not changed yet.
+This is the most substantive finding of the August 2026 review, and the
+constants below **have since been changed** to the recommended values (coal
+1,100, gas 530, oil 1,200 — §3). This section is kept as the record of why,
+because a skeptical reader deserves the reasoning, not just the number.
 
 IPCC AR5's medians are a **global, harmonised literature sample**, weighted
 toward the newer and more efficient plants that dominate the LCA literature.
 The US fossil fleet is older and less efficient than that sample. EIA
 publishes what the US fleet actually emitted, measured from real fuel burn:
 
-| Fuel | EIA measured US rate, 2023 (combustion only) | App's current *lifecycle* factor |
-|---|---|---|
-| Coal | 2.31 lb/kWh = **1,048 gCO₂/kWh** | 820 |
-| Natural gas | 0.96 lb/kWh = **435 gCO₂/kWh** | 490 |
-| Petroleum | 2.46 lb/kWh = **1,116 gCO₂/kWh** | 650 |
+| Fuel | EIA measured US rate, 2023 (combustion only) | Old AR5-derived factor | Current factor |
+|---|---|---|---|
+| Coal | 2.31 lb/kWh = **1,048 gCO₂/kWh** | 820 | 1,100 |
+| Natural gas | 0.96 lb/kWh = **435 gCO₂/kWh** | 490 | 530 |
+| Petroleum | 2.46 lb/kWh = **1,116 gCO₂/kWh** | 650 | 1,200 |
 
 Source: [EIA FAQ — How much CO₂ is produced per kWh of generation?](https://www.eia.gov/tools/faqs/faq.php?id=74&t=11)
+(2023 data, utility-scale electricity-only plants — the FAQ page's own footnote
+excludes combined-heat-and-power plants specifically so CHP's heat-allocated
+fuel use doesn't inflate the per-kWh figure. Verified against the raw page,
+23 Aug 2026.)
 
-For coal and oil, the app's *lifecycle* number is **below** the measured
-*combustion-only* rate for the same fleet. That is not a debatable modelling
-choice, it is arithmetically impossible: lifecycle emissions include combustion
-plus everything upstream, so lifecycle must be ≥ combustion for the same
-plants. Both factors understate US reality.
+For coal and oil, the *old* lifecycle number was **below** the measured
+*combustion-only* rate for the same fleet — and lifecycle emissions are
+combustion plus everything upstream, so a lifecycle figure below a fleet's own
+combustion figure cannot describe that fleet. **One caveat on the word
+"impossible":** AR5's 820 for coal is not internally wrong — it is a
+self-consistent median for the specific (newer, more efficient) plants in its
+global literature sample. What was wrong was *using* that global median to
+stand in for the *specific, older, less-efficient* US fleet this app
+describes. The fix is the same either way (use a US-specific number instead),
+but "impossible" is a claim about the fit between the number and the fleet it
+was applied to, not a claim that AR5's own arithmetic doesn't add up.
 
 ### The gas case in detail
 
-The app's 490 is AR5's median for a **combined-cycle** plant, applied to every
+The *old* 490 was AR5's median for a **combined-cycle** plant, applied to every
 megawatt-hour EIA reports under the single `NG` code — which lumps
 combined-cycle, simple-cycle peaking turbines, and gas steam together. The
 technologies are not close to each other:
@@ -153,20 +165,34 @@ Btu, [EIA carbon coefficients](https://www.eia.gov/environment/emissions/co2_vol
 
 A peaking turbine emits about **46% more per kWh than a combined-cycle plant**,
 and peakers are exactly what a grid dispatches to cover the evening demand
-ramp — the hours this app tells people to avoid. So 490 understates the evening
-peak on two counts at once: it is a best-case technology's factor, applied to a
-fleet, at the hours when the worst-case technology is most likely to be running.
+ramp — the hours this app tells people to avoid. So 490 understated the
+evening peak on two counts at once: it was a best-case technology's factor,
+applied to a fleet, at the hours when the worst-case technology is most likely
+to be running.
 
-**The defensible correction** anchors on the measured fleet average rather than
-a single technology's median. AR5's own numbers imply the lifecycle uplift over
-combustion for gas: 490 (lifecycle CCGT) − 399 (combustion CCGT) ≈ **90 g/kWh**
-of upstream extraction, processing, transport, methane leakage and construction.
-Applying that same uplift to EIA's measured fleet-average combustion rate:
+**The correction anchors on the measured fleet average rather than a single
+technology's median.** AR5's own numbers imply the lifecycle uplift over
+combustion for gas: 490 (lifecycle CCGT) − 399 (combustion CCGT) = **91
+g/kWh** of upstream extraction, processing, transport, methane leakage and
+construction. Applying that same uplift to EIA's measured fleet-average
+combustion rate:
 
-$$435 + 90 \approx 525 \text{ gCO}_2\text{e/kWh}$$
+$$435 + 91 \approx 526 \text{ gCO}_2\text{e/kWh}$$
 
-`docs/science-review.md` recommends 530 on this basis. The same method gives
-~1,100 for coal and ~1,200 for oil.
+which is why `LIFECYCLE_FACTORS.gas` is now `530`. The same
+combustion-plus-upstream-allowance method gives coal and oil their current
+values, but with a caveat the code comment glosses over: for coal, the
+allowance actually applied is `1,100 − 1,048 = 52` g/kWh, not the "~60" the
+code comment claims, and for oil it is `1,200 − 1,116 = 84`, close to the
+claimed "~85." **Only the gas allowance (91) is derived from a published
+number** (AR5's own CCGT lifecycle-minus-combustion delta); the coal and oil
+allowances were chosen to be *plausible* — roughly consistent with published
+estimates that upstream mining/transport is a single-digit-to-low-teens
+percentage of coal's lifecycle total, and a somewhat larger share for oil's
+extraction-and-refining — but they are not derived from a specific citation
+the way gas's is, and the numbers actually used don't quite match the
+allowance the code comment describes. Treat coal 1,100 and oil 1,200 as
+well-motivated engineering estimates, not measurements.
 
 **What we deliberately did not do:** apply a higher gas factor during peak
 hours specifically. It is the right idea physically, but EIA's hourly feed
@@ -313,9 +339,9 @@ figure changes the gram totals but barely moves the percentage**.
 |---|---|---|---|
 | Dishwasher | 1.2 | 2 h | OK — ENERGY STAR ceiling is 240 kWh/yr ÷ 215 cycles = 1.12 |
 | Washing machine | 0.6 | 1 h | OK, but the energy boundary is ambiguous (machine-only vs including water heating) |
-| Clothes dryer | 2.5 | 1.5 h | kWh OK; **duration too long**, real cycles are 40–70 min |
+| Clothes dryer | 2.5 | 1 h | OK — real cycles run 40–70 min, and 1 h sits inside that range |
 | EV charging | 30 | 4 h | OK — 30 kWh ÷ 7.7 kW ≈ 3.9 h on a common 240 V/32 A charger |
-| Water heater | 4 | 2 h | **Too low for its own "full tank reheat" label** — physics says 6–8.5 |
+| Water heater | 7 | 2 h | OK — 40 gal × 8.34 lb/gal × 70°F ÷ 3,412 ≈ 6.8 kWh, within the defensible 6–8.5 range |
 | Central AC pre-cool | 6 | 2 h | OK — 3 kW ≈ a 3-ton unit |
 | Heat pump boost | 5 | 2 h | OK for compressor-only; excludes resistance backup |
 | Electric oven | 2.3 | 1 h | Slightly high; element cycling puts steady baking nearer 1.5–2.0 |
@@ -409,11 +435,18 @@ never blend it into the average series.
 
 1. **Average, not marginal** (§7). Structural. Could overstate or understate
    any individual saving, and in unusual cases point the wrong way.
-2. **Coal and oil factors understate the US fleet** (§4). Currently biases
-   coal-heavy regions (MISO, SPP) *cleaner* than they are — by roughly 30% on
-   the coal contribution.
-3. **Gas is costed as combined-cycle** (§4). Biases the evening peak cleaner
-   than reality, which specifically understates the thing the app is selling.
+2. **Coal, oil and gas factors were corrected to US-fleet values in August
+   2026** (§4); this is now resolved, not outstanding. The residual risk is
+   narrower: the gas factor is still a single fleet-average number applied to
+   every hour, so it still understates the evening peak specifically (when
+   less-efficient peaking turbines are more likely to be running) and
+   overstates the off-peak base-load hours slightly, even though the
+   *average* is now right. Doing this properly needs EIA-860/923 plant-level
+   technology joined to hourly output — real future work.
+3. **No coal/oil/gas technology split by hour, ever** (§4). Even with the
+   fleet-average correction, EIA-930's hourly feed carries no combined-cycle
+   vs. peaker split under `NG`, so the app cannot yet tell you that *this
+   specific* evening hour is running dirtier gas than *that* one.
 4. **Generation-based, not consumption-based** (§2). Import-heavy regions read
    cleaner than a full accounting would show.
 5. **Beyond ~16 hours it is a pattern, not a prediction** (§5.3). No weather
@@ -524,10 +557,12 @@ Source: [EPA eGRID](https://www.epa.gov/egrid) (eGRID2023, released 2025).
 
 ## 10. Corrections and changelog
 
-Findings from the August 2026 science review — including the recommended
-constant changes that this document deliberately does **not** pretend are
-already in the code — are in
-[`docs/science-review.md`](./science-review.md).
+Findings from the August 2026 science review are in
+[`docs/science-review.md`](./science-review.md). As of this revision, the
+factor changes (§4), the `ABSOLUTE_BANDS` re-cut, and the appliance corrections
+(§6) it recommended have been **applied to the code**; a follow-up
+verification pass checking those changes against primary sources is appended
+at the end of `science-review.md`.
 
 If you find something wrong here, the fix belongs in both places: the constant
 in `src/lib/`, and the claim in this file.
