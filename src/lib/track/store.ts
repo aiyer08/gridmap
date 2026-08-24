@@ -91,18 +91,18 @@ function numberOr(value: unknown, fallback: number): number {
  * local. The Supabase modules are imported dynamically so that an app with no
  * Supabase env never pulls the client into the bundle it ships.
  */
+/**
+ * Pick the store to use.
+ *
+ * Local storage, always. GridMap deliberately has no accounts: your impact
+ * history lives in your browser and is never sent anywhere. That keeps the
+ * whole app deployable as a static frontend plus one cached API route, with no
+ * database, no auth flow and no personal data to look after.
+ *
+ * The `TrackerStore` interface stays in place so a synced backend could be
+ * added later without touching the UI.
+ */
 export async function createStore(): Promise<StoreHandle> {
   const { localStore } = await import("./localStore");
-  try {
-    const { isSupabaseConfigured, getSession } = await import("./supabaseClient");
-    if (!isSupabaseConfigured()) return { store: localStore, source: "local" };
-    const session = await getSession();
-    if (!session) return { store: localStore, source: "local" };
-    const { supabaseStore } = await import("./supabaseStore");
-    return { store: supabaseStore, source: "supabase" };
-  } catch {
-    // Any Supabase problem (network, bad key, blocked storage) must not cost the
-    // user their tracker — fall back to the local one.
-    return { store: localStore, source: "local" };
-  }
+  return { store: localStore, source: "local" };
 }

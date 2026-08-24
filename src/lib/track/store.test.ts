@@ -7,7 +7,6 @@ import {
   type LogInput,
   type TrackerStore,
 } from "./store";
-import { migrateLocalToSupabase } from "./supabaseStore";
 import { localStore } from "./localStore";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -95,53 +94,3 @@ function action(partial: Partial<LoggedAction>): LoggedAction {
   };
 }
 
-describe("migrateLocalToSupabase", () => {
-  const localHistory = [
-    action({ loggedAt: "2026-08-24T19:00:00.000Z", gramsSaved: 100 }),
-    action({ loggedAt: "2026-08-25T19:00:00.000Z", gramsSaved: 200, subjectId: "ev" }),
-    action({ loggedAt: "2026-08-26T19:00:00.000Z", status: "declined", gramsSaved: 0 }),
-  ];
-
-  it("does nothing when there is no local history", async () => {
-    const remote = memoryStore();
-    expect(await migrateLocalToSupabase(memoryStore(), remote)).toEqual({
-      imported: 0,
-      skipped: 0,
-    });
-  });
-
-  it("carries an anonymous history into the account, oldest first", async () => {
-    const local = memoryStore(localHistory);
-    const remote = memoryStore();
-    expect(await migrateLocalToSupabase(local, remote)).toEqual({ imported: 3, skipped: 0 });
-    expect(remote.rows.map((r) => r.loggedAt)).toEqual([
-      "2026-08-24T19:00:00.000Z",
-      "2026-08-25T19:00:00.000Z",
-      "2026-08-26T19:00:00.000Z",
-    ]);
-    // Declines travel too — the tracker keeps the whole story, worth zero grams.
-    expect(remote.rows.filter((r) => r.status === "declined")).toHaveLength(1);
-  });
-
-  it("is idempotent: running it again imports nothing", async () => {
-    const local = memoryStore(localHistory);
-    const remote = memoryStore();
-    await migrateLocalToSupabase(local, remote);
-    expect(await migrateLocalToSupabase(local, remote)).toEqual({ imported: 0, skipped: 3 });
-    expect(remote.rows).toHaveLength(3);
-  });
-
-  it("skips rows already present under a different id", async () => {
-    // Same event, re-minted id — what happens if a row was inserted by another
-    // device. Dedupe is on kind + subject + timestamp + status.
-    const remote = memoryStore([{ ...localHistory[0], id: newActionId() }]);
-    const local = memoryStore(localHistory);
-    expect(await migrateLocalToSupabase(local, remote)).toEqual({ imported: 2, skipped: 1 });
-  });
-
-  it("leaves the local copy alone as an offline fallback", async () => {
-    const local = memoryStore(localHistory);
-    await migrateLocalToSupabase(local, memoryStore());
-    expect(local.rows).toHaveLength(3);
-  });
-});

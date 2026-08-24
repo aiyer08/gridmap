@@ -12,7 +12,6 @@
     "build:profiles": "tsx scripts/build-profiles.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
     "lucide-react": "^1.33.0",
     "motion": "^13.1.1",
     "next": "16.3.2",

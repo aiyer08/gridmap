@@ -1,285 +1,471 @@
-# Science review
+# Science review — August 2026
 
-Findings only — no files besides this one and `docs/METHODOLOGY.md` were
-edited. Ordered by the priority the task set, which roughly tracks "how much
-does this change a number or label the user actually sees."
+Reviewer's findings on the numbers behind GridMap. **No existing source file
+was edited**; every recommendation below is a constant to change, with the
+exact replacement value and the source it came from.
 
-Severity key: **High** = changes a user-visible number or label for a
-meaningful share of users. **Medium** = changes a number, but by a small
-amount or for an edge case. **Low** = documentation/citation precision; no
-user-visible number changes.
+Ordered by the priority set in the brief, which roughly tracks "how much does
+this change a number the user actually sees".
 
----
-
-## 1. `ABSOLUTE_BANDS` — High severity, one-line fix
-
-**Issue:** `moderate: 450` in `src/lib/copy.ts` makes the "middling" label
-span 300–450 gCO₂e/kWh, a 50% relative range. Against the measured 14-day
-regional means given for this review (BPA 64–87, CISO 148–293, ERCOT
-234–367, ISNE 301–341, SPP 337–447, MISO 426–506, FPL ~362, PJM ~354), that
-one band swallows both ISNE's entire typical range (a nuclear-heavy grid at
-its normal operating point) and MISO's *cleanest* hour (a coal-heavy grid at
-its best) under the identical "middling" headline — a real difference of
-~40% in actual emissions gets zero differentiation in the label the user
-reads.
-
-**Fix:** change `moderate: 450` to `moderate: 400` in the `ABSOLUTE_BANDS`
-object (`src/lib/copy.ts`). `veryClean: 150`, `clean: 300`, and `dirty: 650`
-are all well-supported by the same data and don't need to move:
-
-- `veryClean: 150` cleanly separates BPA (64–87) and CISO's best hours
-  (floor 148) from everything else.
-- `clean: 300` cleanly brackets CISO's whole range and the cleaner half of
-  ERCOT.
-- Moving only the moderate/carbon-heavy edge from 450 to 400 sits in the
-  genuine gap between ERCOT's dirtiest hour (367) and MISO's cleanest (426),
-  while leaving ISNE (301–341), PJM (354), FPL (362) and ERCOT's top (367)
-  together as "middling" — which is an accurate description of the broad
-  gas/nuclear middle of the US grid mix — and correctly pushes MISO's whole
-  range and SPP's dirtier hours (400–447) into "carbon-heavy," where a
-  coal-heavy grid belongs even on a relatively good day.
-- `dirty: 650` isn't contradicted by any of the given data (nothing here
-  exceeds 506) and single-hour spikes during real winter-peak events on
-  coal-heavy BAs can plausibly exceed it, so it's left as the reserved "worst
-  case" band rather than moved on speculation.
-
-**A secondary, lower-confidence consideration on the top edge:** the data
-given for this review is described as 14-day *means*, which can compress
-real hourly extremes relative to a single-hour reading. Read literally as
-hourly bounds, nothing given comes within 150 g/kWh of `dirty: 650` (MISO's
-max is 506), which would argue for pulling that edge down too — but if the
-"means" already capture most of the real hourly spread, a coal-heavy grid's
-worst individual hour (a winter cold snap running older peaking coal and any
-residual oil units flat out) could plausibly exceed 506 without necessarily
-reaching 650. We don't have literal hourly (as opposed to 14-day-mean) data
-to resolve this. `moderate: 450 → 400` is the confident fix; treat
-`dirty: 650` as worth a second look against real hourly extremes, not as a
-recommended change today.
-
-**Source:** derived directly from the 14-day regional means given for this
-review (live EIA-930 data). No external citation applies to a UX threshold
-choice; this is an internal-consistency fix, not a literature lookup.
+**Severity key**
+- **High** — changes a user-visible number or label for a meaningful share of users.
+- **Medium** — changes a number, but by a small amount or in an edge case.
+- **Low** — citation/wording precision; no user-visible number changes.
 
 ---
 
-## 2. The gas factor (490 gCO₂e/kWh applied to all `NG` generation) — High severity, core savings claim
+## Summary of every recommended change
 
-**Issue:** `LIFECYCLE_FACTORS.gas = 490` in `src/lib/emissions.ts` is IPCC
-AR5's median for a **combined-cycle** gas plant specifically, applied
-uniformly to every megawatt-hour EIA reports under the single `NG` code —
-which is unavoidable, because EIA's hourly fuel-type-data feed doesn't
-distinguish combined-cycle from peaking-turbine generation at all. Peaking
-turbines are real-world dirtier (roughly 35–40% higher heat rate) and, per
-EIA's own "Today in Energy" reporting, run disproportionately during the
-evening demand ramp — the exact window this app tells people to avoid. That
-means 490 most likely understates emissions during the hours the app is
-already flagging as bad, and probably understates the US gas fleet's
-true annual average too.
-
-**The numbers, verified independently:**
-- EIA's own FAQ states 2023 US natural gas generation averaged **0.96 lb
-  CO₂/kWh = 435 gCO₂/kWh, combustion-only**, blending combined-cycle, simple
-  cycle, steam and internal-combustion generation at their *actual* national
-  output shares for the year. [eia.gov/tools/faqs/faq.php?id=74](https://www.eia.gov/tools/faqs/faq.php?id=74&t=11)
-- Heat-rate-derived combustion estimates (53.06 kg CO₂/MMBtu, the standard
-  EPA natural-gas combustion factor) confirm the split: modern combined-cycle
-  (<7,000 Btu/kWh) ≈ 371 g/kWh combustion-only; the 2020 CCGT fleet average
-  (7,146 Btu/kWh) ≈ 379 g/kWh; simple-cycle/peaking turbines (~10,000
-  Btu/kWh, 2020 average) ≈ 531 g/kWh combustion-only. [eia.gov/todayinenergy/detail.php?id=61444](https://www.eia.gov/todayinenergy/detail.php?id=61444)
-- EIA: combustion-turbine generation "nearly doubles" in the 3–6 PM window
-  versus early morning. [eia.gov/todayinenergy/detail.php?id=13191](https://www.eia.gov/todayinenergy/detail.php?id=13191);
-  GAO and Sandia both confirm peakers are dispatched specifically to cover
-  peak load and run at low annual capacity factor otherwise ([gao.gov/products/gao-24-106145](https://www.gao.gov/products/gao-24-106145),
-  [sandia.gov Issue Brief 2020-11](https://www.sandia.gov/app/uploads/sites/163/2022/04/Issue-Brief-2020-11-Peaker-Plants.pdf)).
-- eGRID's simple-cycle CO₂ rates land in a similar 1,000–1,400 lb/MWh
-  (453–635 g/kWh) combustion-only band. [EPA Simple Cycle Stationary Combustion Turbine EGUs TSD](https://www.epa.gov/system/files/documents/2023-05/Simple%20Cycle%20Stationary%20Combustion%20Turbine%20EGUs%20TSD.pdf)
-
-**Fix:** raise `LIFECYCLE_FACTORS.gas` from `490` to **`550`**.
-
-Derivation, shown rather than asserted: EIA's national blended
-combustion-only average is 435 g/kWh (above). IPCC AR5's own 490
-"combined-cycle lifecycle" figure sits roughly 90–115 g/kWh above a
-combined-cycle-only *combustion* estimate (371–398 g/kWh, from the heat-rate
-figures above), which is the implied lifecycle uplift (upstream extraction,
-methane leakage, infrastructure) AR5 is adding on top of combustion. Applying
-that same ~100 g/kWh uplift to the *national blended* combustion figure
-(435, which already reflects the real annual-average peaker/CCGT mix, not
-just CCGT) gives 435 + 100 ≈ **535–545**, which we round to 550. This is a
-derived estimate, not a single published number — flagged as such rather
-than dressed up as a direct citation. It fixes the *annual-average* bias;
-it does **not** fully fix the evening-peak-specific understatement, because
-EIA's hourly `NG` code carries no technology split to condition a peak-hour
-multiplier on. A true fix for the peak-hour case would need a different EIA
-dataset (plant-level generator technology, e.g. via EIA-923, joined to
-hourly output) — out of scope for a constant change and noted here as future
-work, not something to fake with an unearned multiplier.
-
-**Severity:** this feeds directly into every "you saved X% CO₂" claim, for
-every appliance, in every region, at every hour. Moving 490→550 is an ~12%
-increase in the gas contribution to intensity wherever gas is a meaningful
-share of the mix — which is most US regions, most evenings.
-
----
-
-## 3. Appliance `kWhPerRun` / `durationHours` (`src/lib/appliances.ts`)
-
-Checked against ENERGY STAR, EIA RECS, and DOE ballparks. Verdict for each:
-
-| Appliance | App value | Verdict | Real-world range found | Source |
-|---|---|---|---|---|
-| Dishwasher | 1.2 kWh / 2h | **Fine** | ENERGY STAR cap: 270 kWh/yr ÷ 215 cycles/yr = 1.26 kWh/cycle | [energystar.gov dishwashers](https://www.energystar.gov/products/dishwashers/key_product_criteria) |
-| Washing machine | 0.6 kWh / 1h | **Fine** | 0.4–1.0 kWh/load for warm settings on machines with a hose-fed (not internally-heated) water supply | multiple retailer/utility calculators, consistent with each other |
-| Clothes dryer | 2.5 kWh / 1.5h | **Fine** | 2.33–3 kWh/load typically cited; ~700 kWh/yr ÷ ~300 loads/yr ≈ 2.3 | [ENERGY STAR dryer scoping report](https://www.energystar.gov/sites/default/files/asset/document/ENERGY_STAR_Scoping_Report_Residential_Clothes_Dryers.pdf) |
-| EV charging | 30 kWh / 4h ≈ 100 mi | **Fine, on the efficient side** | Most-efficient 2026 models: 23–24 kWh/100mi (EPA labels); broader fleet average incl. SUVs/trucks commonly cited nearer 30–35 | [fueleconomy.gov](https://www.fueleconomy.gov/), EPA 2026 label data |
-| Water heater | 4 kWh / 2h | **Plausible — unverified against a specific published per-event figure** | Physically consistent with a ~2 kW average draw on a common 4,500 W element during a partial-tank reheat, but we could not find a DOE/RECS number for "one reheat event" specifically (RECS reports daily/annual totals, not per-event) | — |
-| Central AC pre-cool | 6 kWh / 2h | **Fine** | ~3 kW draw is typical for a 3-ton residential unit | general HVAC sizing convention (~1 kW/ton) |
-| Heat pump boost | 5 kWh / 2h | **Fine** | ~2.5 kW average draw, reasonable mid-size unit | same convention |
-| Electric oven | 2.3 kWh / 1h | **Fine** | 2–2.5 kWh/hour commonly cited for baking | multiple DOE-derived appliance calculators |
-| Pool pump | 7.5 kWh / 6h (1.25 kW) | **Fine, on the efficient side** | 1.25 kW is at the low end of common 1–2.2 kW single-speed pump draws; 6h/day is within typical filtration guidance | — |
-| Device charging | 0.3 kWh / 2h | **Fine** | Laptop (~65W) + tablet (~20W) + 2 phones (~10W each) over 2h ≈ 0.21–0.3 kWh | device charger wattage specs |
-| Vacuum / chores | 0.8 kWh / 1h | **Fine** | Consistent with a vacuum (~1,000–1,400 W) run intermittently over a mixed-chore hour | — |
-
-**Most consequential of these:** none require a change. The EV and pool-pump
-figures sit at the efficient edge of their real-world ranges rather than
-dead center, which very slightly understates typical savings for those two
-categories, but not enough to warrant a specific replacement number without
-better data on the actual mix of vehicles/pumps in use.
-
-### HABITS (same file)
-
-- **`air-dry` (2.5 kWh saved):** matches the dryer's own `kWhPerRun` (2.5)
-  exactly — internally consistent, no issue.
-- **`cold-wash` (0.5 kWh saved):** worth a comment, not a number change. This
-  implies that of the washing machine's 0.6 kWh warm-wash baseline, ~83% is
-  attributable to water heating. That ratio is commonly cited for a fully
-  *hot* wash (DOE-adjacent guidance often puts water heating at ~90% of a hot
-  cycle's energy), but the app's own washer baseline is explicitly a *warm*
-  wash, where the water-heating share should be smaller. The likely
-  explanation is that `kWhPerRun: 0.6` is meant as the washing machine's own
-  electrical draw (motor/pump/spin only, since most US washers take
-  pre-heated water from the home's tank rather than heating internally),
-  while `cold-wash: 0.5` is meant as a *whole-household* saving that also
-  credits the water heater's avoided reheat — which is a legitimate and
-  commonly-cited magnitude for a warm→cold switch, just modeled on a
-  different energy boundary than the washer's own figure. We didn't find
-  evidence either literal number is wrong; we'd suggest a one-line code
-  comment clarifying which boundary each figure uses, since right now a
-  reader can reasonably interpret them as contradictory.
-
----
-
-## 4. `TIPS` and `FAQ` claims (`src/lib/copy.ts`)
-
-| Claim | Verdict | Correct figure / source |
-|---|---|---|
-| "Standby power is about 5–10% of a typical home's electricity" | **Accurate** | DOE-cited range, widely corroborated (e.g. Ohio Consumers' Counsel, EnergySage summarizing DOE) |
-| "Heating and cooling are the largest slice of most electricity bills" | **Accurate, for electricity specifically** | EIA RECS: air conditioning 19% + electric space heating 12% = 31% of home *electricity*, ahead of water heating (13%), lighting (9%), refrigeration (7%). [eia.gov/energyexplained/use-of-energy/electricity-use-in-homes.php](https://www.eia.gov/energyexplained/use-of-energy/electricity-use-in-homes.php) — note the frequently-quoted "52% of home energy" statistic is *total* site energy including gas heating, a different (larger) number than the electricity-only claim the app is making; the app's specific wording (electricity bills) is the correct framing and doesn't need to change. |
-| "Two degrees [thermostat] for a day is roughly 5% of heating or cooling energy" | **Defensible, upper end of a wide range — soften slightly** | DOE's most-quoted rule of thumb is ~1%/degree for an 8-hour setback; other DOE-adjacent and NREL-linked estimates run 1–3%/degree, and up to ~5%/degree in some real-world monitoring. 5% for a *sustained all-day* 2° change (not just an 8h setback) is plausible but sits at the aggressive edge of the literature. Suggest rewording to "roughly 3–5%" rather than a flat "5%," or specifying "for the day" to signal it's a longer window than DOE's usual 8-hour example. |
-| "Most of a wash cycle's energy goes into heating water, not spinning the drum" / "skipping the water heating is most of a wash cycle's energy" | **Accurate for a hot wash; slightly generalized for the app's own warm-wash baseline** | ~90% water-heating share is commonly cited for hot washes; directionally correct but a touch strong as stated for "warm." No number to change in copy (it's qualitative), but see the `cold-wash`/HABITS note in §3 above for the quantitative version of the same issue. |
-| "An LED uses about a fifth of what an incandescent does" | **Accurate** | ENERGY STAR: LEDs use "at least 75% less energy" than incandescent, i.e. ≤25% of original, with real examples (60W→10-12W) landing right around "a fifth." [energystar.gov](https://www.energystar.gov/products/learn-about-led-lighting) |
-| "The water heater is the second-biggest energy user in a typical home" | **Accurate, for electricity specifically** | EIA RECS electricity breakdown ranks: AC (19%) > water heating (13%) > space heating (12%) > lighting (9%) > refrigeration (7%) > laundry (6%) — water heating genuinely is #2 by electricity end-use. Worth noting explicitly only applies to electric water heaters (roughly half of US homes have gas units, which wouldn't show up on the electric bill this app is about at all); the tip's own context (turning down an electric water heater's thermostat) already implies this, so no wording change is required, just flagging the scope. |
-| "A dryer load is roughly 2.5 kWh" | **Accurate** | Matches `appliances.ts`'s own dryer value and the 2.33–3 kWh range found in §3. |
-
-**Net: no factual errors in TIPS/FAQ.** One claim (thermostat 5%) is worth
-softening slightly; everything else checks out against a real source.
-
-**Copy consistency note:** `src/app/tips/page.tsx` states the whole factor
-table is "IPCC AR5 medians, the same basis Electricity Maps uses." Per
-§6/below, that's true for seven of the eight rows but not for oil (which
-IPCC AR5 doesn't cover at all). If the constants get corrected, that
-sentence should either drop "oil" from the "IPCC AR5" claim or add a
-one-clause caveat — otherwise the user-facing methodology page states a
-citation that doesn't hold for one of its own table rows.
-
----
-
-## 5. Average vs. marginal emissions caveat
-
-Not a numeric fix — see `docs/METHODOLOGY.md` §6 for the full write-up,
-grounded in:
-
-- Siler-Evans, Azevedo & Morgan, *"Marginal Emissions Factors for the U.S.
-  Electricity System,"* Environ. Sci. Technol. 2012 — the foundational
-  average-vs-marginal comparison for the US grid.
-  [PDF via WattTime](https://watttime.org/wp-content/uploads/2023/11/Marginal-Emissions-Factors-for-the-US-Electricity-System_April-2012.pdf),
-  [PubMed](https://pubmed.ncbi.nlm.nih.gov/22486733/). Quantified finding we
-  could verify from search results: an identical efficiency measure was
-  estimated to avoid roughly 70% more CO₂ in the Midwest than the same
-  measure in the West — a gap an average-intensity comparison inside either
-  region can't see.
-- WattTime's own explainer, [Average vs. marginal emissions](https://watttime.org/data-science/data-signals/average-vs-marginal/),
-  which gives a concrete, citable example of average and marginal pointing
-  in *opposite directions* (new load on a hydro-rich grid that actually
-  ramps up a fossil peaker) but — checked directly — does **not** give a
-  numerical frequency for how often this happens. We report that gap
-  honestly in the methodology doc rather than inventing a percentage.
-
-**What we could not verify:** a single peer-reviewed figure for "what
-fraction of US grid-hours have average and marginal intensity disagreeing in
-sign." We looked and didn't find one; the methodology doc says so explicitly
-rather than presenting an invented number as established fact.
-
-The existing caveat in `src/app/tips/page.tsx` ("We use average emissions,
-not marginal... can differ from the grid average and occasionally even
-points the other way") is directionally correct and doesn't need a rewrite;
-`docs/METHODOLOGY.md` §6 gives the fuller, cited version for anyone who
-wants to check it.
-
----
-
-## 6. Lifecycle factors and the `OTH`/`UNK`/`GEO` handling
-
-- **Coal (820), gas (490 — see §2), nuclear (12), hydro (24), solar (48),
-  wind (11): all verified** against IPCC AR5 WG3 Annex III, Table A.III.2
-  medians. No changes.
-- **Oil (650): the number is fine, the citation is not.** IPCC AR5 Annex III
-  has no oil category at all (oil is under 2% of global generation, so AR5
-  didn't model it). 650 gCO₂e/kWh is a real, independently-corroborated
-  figure — UK Parliament POST Note 268 (Oct. 2006) cites ~650 for UK oil
-  generation, and secondary sources put oil generally in the 650–750 range —
-  but the code comment in `src/lib/emissions.ts` ("IPCC AR5 (WG3 Annex III)
-  medians") overclaims its provenance for this one row. **Fix: correct the
-  comment/citation, not the value** — e.g. cite POST Note 268 or whatever
-  secondary source Electricity Maps itself uses for oil, rather than
-  attributing it to AR5.
-- **`OTH`/`UNK` at 300: reasonable, already honestly caveated.** This is a
-  genuine EIA grab-bag (landfill gas, waste heat, unclassified units) with no
-  single defensible published factor, and the existing code comment already
-  says so plainly ("300 sits between biomass and waste-to-energy") rather
-  than dressing it up as a citation. No change recommended.
-- **`GEO` at 38, pulled out of the "Other" display bucket: correct and
-  already verified** — this review's brief states it was checked against
-  live EIA data and found to overstate CAISO's intensity by ~7 gCO₂/kWh if
-  left in the 300 bucket. No change.
-- **Minor, low-priority oddity:** `DIRECT_FACTORS` (combustion-only) has
-  coal at 1000 and oil at 850 — both *higher* than their own lifecycle
-  figures (820, 650), which looks backwards at a glance (lifecycle should be
-  ≥ combustion). This is plausible rather than wrong — the AR5 harmonized
-  lifecycle medians reflect a global literature sample skewed toward newer,
-  more efficient plants than the US's specific (older, dirtier) coal fleet,
-  whose EIA-measured combustion-only average really is close to 1000 g/kWh
-  ([EIA FAQ](https://www.eia.gov/tools/faqs/faq.php?id=74&t=11): coal 2.31
-  lb/kWh = 1047 g/kWh in 2023). We confirmed `DIRECT_FACTORS` isn't
-  referenced anywhere else in the app (`grep` found only its own
-  definition), so this has zero user-visible effect today. No action needed
-  unless that table gets wired into a UI later, at which point it's worth a
-  one-line comment explaining the apparent inversion.
-
----
-
-## Summary table
-
-| # | Item | Severity | Constant | Current | Recommended | Confidence |
+| # | File | Constant | Current | → Recommended | Severity | Confidence |
 |---|---|---|---|---|---|---|
-| 1 | `ABSOLUTE_BANDS.moderate` | High | `src/lib/copy.ts` | 450 | **400** | High — directly derived from the given regional data |
-| 2 | `LIFECYCLE_FACTORS.gas` | High | `src/lib/emissions.ts` | 490 | **550** | Medium — derived estimate, clearly shown as such, not a single direct citation |
-| 3 | Appliance table | — | `src/lib/appliances.ts` | — | No changes | High — all checked values fall inside real-world ranges |
-| 3b | `HABITS.cold-wash` | Low | `src/lib/appliances.ts` | 0.5 | No number change; add a clarifying comment | — |
-| 4 | TIPS/FAQ thermostat claim | Low | `src/lib/copy.ts` | "roughly 5%" | Reword to "roughly 3–5%" (optional) | Medium |
-| 4b | tips page IPCC citation sentence | Low | `src/app/tips/page.tsx` | Claims all factors are IPCC AR5 | Caveat the oil row, or exclude it from that sentence | High |
-| 6 | `LIFECYCLE_FACTORS.oil` comment | Low | `src/lib/emissions.ts` | Cites AR5 | Cite POST 268 / other secondary source instead | High |
+| 1 | `src/lib/copy.ts` | `ABSOLUTE_BANDS.moderate` | `450` | **`400`** | High | High |
+| 2a | `src/lib/emissions.ts` | `LIFECYCLE_FACTORS.gas` | `490` | **`530`** | High | Medium-high |
+| 2b | `src/lib/emissions.ts` | `LIFECYCLE_FACTORS.oil` | `650` | **`1200`** | High | High |
+| 2c | `src/lib/emissions.ts` | `LIFECYCLE_FACTORS.coal` | `820` | **`1100`** (ship with a band re-cut) | High | High on the number, medium on the rollout |
+| 3 | `src/lib/appliances.ts` | water heater `kWhPerRun` | `4` | **`7`** | High | High |
+| 3b | `src/lib/appliances.ts` | dryer `durationHours` | `1.5` | **`1`** | Medium | High |
+| 3c | `src/lib/appliances.ts` | `HABITS` `lights-off.kWhSaved` | `0.3` | **`0.1`** | Medium | High |
+| 3d | `src/lib/appliances.ts` | pool pump `assumption` text | "A 1.25 kW pump" | relabel as **variable-speed** (or raise kWh to `11`) | Medium | High |
+| 3e | `src/lib/appliances.ts` | oven `kWhPerRun` | `2.3` | `2.0` *(optional)* | Low | Medium |
+| 4 | `src/lib/copy.ts` | thermostat tip + habit detail | "about 5%" | **"roughly 2–5%"** | Low | High |
+| 4b | `src/app/tips/page.tsx` | "These are IPCC AR5 medians" | — | **reword** — untrue for oil today, untrue for gas/coal/oil after #2 | Low | High |
+| 5 | `src/lib/emissions.ts` | oil factor's code comment | "IPCC AR5 (WG3 Annex III) medians" | **fix the citation** — AR5 has no oil category | Low | High |
 
-Everything else checked (standby power, LED, water heater ranking,
-heating/cooling share, dryer kWh, geothermal handling, OTH/UNK bucket, five
-of the six other lifecycle factors) is accurate as-is and is called out
-above as such rather than left unaddressed.
+Everything else checked out, and is called out as fine in §7 rather than
+padded into a finding.
+
+---
+
+## 1. `ABSOLUTE_BANDS` — High severity
+
+**The question asked:** under the current bands, MISO's *cleanest* hour (426)
+and New England's *typical* hour (301) both land in the same "middling" bucket.
+Is that right?
+
+**No.** That is the clearest possible symptom of a band edge in the wrong place.
+
+`absoluteLabel()` currently reads: ≤150 "very clean", ≤300 "clean", ≤450
+"middling", ≤650 "carbon-heavy", >650 "very carbon-heavy". The "middling" band
+spans 300–450 — a 50% relative range that swallows two genuinely different
+situations:
+
+- **ISNE at 301–341** — a nuclear-and-gas grid at its normal operating point.
+  "Middling" is a fair description.
+- **MISO at 426** — a coal-heavy grid having its *best hour of the fortnight*.
+  Calling that "middling" tells a Minnesota user their cleanest available hour
+  is unremarkable, and simultaneously tells a Boston user their ordinary hour is
+  no better than it.
+
+### Where the edge belongs
+
+Sorting the measured 14-day means and looking for natural breaks:
+
+```
+64  87 | 148  234  293 | 301  337  341  354  362  367 | 426  447  506
+BPA    | CISO ········ | ISNE/SPP/PJM/FPL/ERCOT ····· | MISO/SPP   MISO
+```
+
+The largest interior gaps are 148→234 (86), 87→148 (61), and **367→426 (59)**.
+That last gap is the real boundary between "the broad gas/nuclear middle of the
+US grid" and "coal-heavy", and it is where the label should switch.
+
+**Recommendation — change exactly one value:**
+
+```ts
+export const ABSOLUTE_BANDS = {
+  veryClean: 150,
+  clean: 300,
+  moderate: 400,   // was 450
+  dirty: 650,
+} as const;
+```
+
+Effect: MISO's entire range (426–506) and SPP's dirty half (400–447) become
+"carbon-heavy", which is accurate for a coal-heavy grid even on a good day.
+ISNE (301–341), PJM (354), FPL (362) and ERCOT's worst (367) stay "middling".
+
+### Why the other three edges stay
+
+- **`veryClean: 150`** — separates BPA (64–87) and CISO's best solar hours
+  (floor 148) from everything else. CISO at 148 genuinely is very clean by US
+  standards, and letting it earn the top label is accurate as well as
+  motivating.
+- **`clean: 300`** — threads precisely between CISO's ceiling (293) and ISNE's
+  floor (301). Already remarkably well placed; leave it alone.
+- **`dirty: 650`** — nothing in the measured set reaches it (max 506), so "very
+  carbon-heavy" currently never fires for these eight regions. It stays
+  reachable for small coal-heavy balancing authorities: eGRID2023 puts MROE
+  (eastern Wisconsin) at 637 gCO₂/kWh **combustion-only**, which clears 650 once
+  lifecycle is counted. Keep it as the reserved worst case. If you want the top
+  label to fire for coal-heavy BAs, 600 is defensible — but that is a
+  preference, not a correction.
+
+### Cross-check against an independent source
+
+eGRID2023 annual subregion averages (combustion-only, so our lifecycle numbers
+sit above them) break in the same place: CAMX 195, RFCE 272, NWPP 288, ERCT
+334, FRCC 356, SPNO 394, SPSO 397 │ **RFCW 415, MROW 420, RMPA 473, MROE 637**.
+A cut at 400 separates the gas-dominant subregions from the coal-heavy ones.
+Source: [EPA eGRID](https://www.epa.gov/egrid).
+
+### Two implementation notes
+
+- **No test breakage.** `src/lib/copy.test.ts` asserts `absoluteLabel(500) ===
+  "carbon-heavy"` (still true at 400), `absoluteLabel(290) === "clean"` (true),
+  `absoluteTone(426) !== "clean"` (true), and band monotonicity (true).
+- **`absoluteTone()` is effectively dead code.** Only `absoluteLabel()` is
+  rendered (`src/components/app/GridNowCard.tsx:84`); `absoluteTone` appears
+  nowhere outside its own tests. Worth knowing because `absoluteTone` ignores
+  `moderate` entirely and treats everything from 301 to 650 as a single "okay"
+  band — if it is ever wired into the UI, it should switch on `moderate`, not
+  `dirty`.
+
+**Source:** derived from the 14-day regional means supplied for this review
+(live EIA-930), cross-checked against eGRID2023. A UX threshold is a judgement
+call rather than a literature value, but the *placement* here is data-driven.
+
+---
+
+## 2. The gas factor — High severity, and the problem is bigger than gas
+
+**The question asked:** does 490 understate the evening peak, and is there a
+defensible better approach?
+
+**Yes, it understates it — on two counts at once.** Investigating it also
+surfaced a larger problem with coal and oil.
+
+### 2a. Gas: 490 → 530
+
+`LIFECYCLE_FACTORS.gas = 490` is IPCC AR5's median for a **combined-cycle**
+plant, applied to every MWh EIA reports under the single `NG` code — which
+lumps combined-cycle, simple-cycle peakers and gas steam together. Those
+technologies are not close:
+
+| Gas technology | EIA 2024 heat rate (Btu/kWh) | Combustion gCO₂/kWh |
+|---|---|---|
+| Combined cycle | 7,548 | **399** |
+| Gas steam turbine | 10,337 | **547** |
+| Simple-cycle turbine (peaker) | 10,999 | **582** |
+
+Heat rates: [EIA Electric Power Annual, Table 8.2](https://www.eia.gov/electricity/annual/html/epa_08_02.html)
+(capacity-weighted, at full load). Carbon coefficient 52.91 kg CO₂/MMBtu:
+[EIA carbon coefficients](https://www.eia.gov/environment/emissions/co2_vol_mass.php).
+Arithmetic: `Btu/kWh × 52.91 ÷ 1,000,000 × 1,000 = gCO₂/kWh`.
+
+A peaker emits **~46% more per kWh than a CCGT**, and peakers are what covers
+the evening ramp. So the app prices the evening peak at a best-case
+technology's factor precisely when the worst-case technology is most likely to
+be running. The concern in the brief is correct.
+
+**The fix anchors on the measured fleet rather than one technology's median.**
+EIA publishes what US gas generation actually emitted in 2023, blending all
+prime movers at their real output shares: **0.96 lb CO₂/kWh = 435 gCO₂/kWh**,
+combustion-only ([EIA FAQ #74](https://www.eia.gov/tools/faqs/faq.php?id=74&t=11)).
+
+AR5's own numbers imply the lifecycle uplift over combustion for gas:
+
+```
+490  (AR5 lifecycle, CCGT)
+−399  (combustion, CCGT at 7,548 Btu/kWh)
+=  91  gCO2e/kWh upstream — extraction, processing, transport,
+        methane leakage, plant construction
+```
+
+Apply that uplift to the measured fleet-average combustion rate:
+
+```
+435 + 91  ≈  526   →   recommend 530
+```
+
+**Recommendation:** `LIFECYCLE_FACTORS.gas: 490 → 530`. Anything in 520–550 is
+defensible; 530 is what the arithmetic gives. This is a *derived* figure rather
+than a single published number, and the code comment should say so.
+
+**What I explicitly do not recommend: a peak-hour multiplier.** Physically it is
+the right instinct, but EIA's hourly feed carries no technology split under
+`NG`, so any multiplier would be invented rather than measured. Doing it
+properly means joining plant-level technology (EIA-860/923) to hourly output —
+real future work. I looked for published hourly gas-technology shares by
+balancing authority and did not find them: **unverified**.
+
+**User-visible effect:** raises gas-heavy regions by roughly `gas share × 40`
+g/kWh — about +18 for ERCOT, +16 for PJM. Note that because it lifts *both* the
+baseline hour and the recommended hour, the headline savings **percentage barely
+moves**; what improves is the honesty of the absolute gram totals.
+
+### 2b. Oil: 650 → 1200 (the current value is arithmetically impossible)
+
+Same EIA source, same year: **US petroleum-fired generation emitted 2.46 lb
+CO₂/kWh = 1,116 gCO₂/kWh, combustion-only.**
+
+The app's *lifecycle* oil factor is **650** — below the measured
+*combustion-only* rate for the same fleet. Lifecycle emissions are combustion
+plus everything upstream, so lifecycle must be ≥ combustion for the same
+plants. 650 cannot be correct for US oil generation. (It is a plausible number
+for an efficient modern oil plant, which is not what the US runs — US petroleum
+generation is largely old oil steam and diesel engines with poor heat rates.)
+
+**Recommendation:** `LIFECYCLE_FACTORS.oil: 650 → 1200` (1,116 combustion plus
+~85–170 upstream for extraction and refining).
+
+**Why this matters despite oil being tiny:** it is tiny *almost* everywhere.
+New England burns meaningful oil during winter pipeline constraints — ISO-NE
+reported oil and coal at roughly 24% of January 2026 CO₂ (794 kt of 3.28 Mt)
+during a cold snap
+([ISO Newswire](https://isonewswire.com/2026/02/25/monthly-wholesale-electricity-prices-and-demand-in-new-england-january-2026/)).
+Those are exactly the hours an ISNE user most needs flagged, and today they are
+priced at 58% of their true rate. Because oil's share is small in normal
+conditions, this change barely perturbs the band calibration in #1.
+
+### 2c. Coal: 820 → 1100 (same failure, bigger blast radius)
+
+EIA, 2023: **US coal generation emitted 2.31 lb CO₂/kWh = 1,048 gCO₂/kWh,
+combustion-only.** The app's lifecycle coal factor is **820** — again below the
+measured combustion-only rate for the same fleet.
+
+AR5's 820 is not wrong as a *global* harmonised median; it reflects a
+literature sample weighted toward newer, more efficient plants. The US coal
+fleet is older than that sample, and EIA's 1,048 is measured from actual fuel
+burn.
+
+**Recommendation:** `LIFECYCLE_FACTORS.coal: 820 → 1100` (1,048 plus ~60–80
+upstream for mining, transport and coal-mine methane).
+
+**⚠️ Rollout coupling — do not ship this one on its own.** The band edges in #1
+were derived from 14-day means computed *with* coal at 820. Raising coal by 280
+g/kWh moves coal-heavy regions substantially: at a ~30% coal share MISO gains
+roughly +84 g/kWh, shifting its range from 426–506 to roughly 510–590. SPP,
+MROW-area PJM and RFCW move similarly; CISO, BPA and ISNE barely move.
+
+Two coherent shipping options:
+
+- **Option A (recommended first step).** Ship #1 (`moderate: 400`), #2a (gas
+  530) and #2b (oil 1200) now. Band placement stays valid: gas-heavy ERCOT goes
+  367 → ~385, still under 400; MISO's floor goes 426 → ~436, still over it.
+- **Option B (more accurate, more work).** Also ship #2c (coal 1100), then
+  **re-pull 14-day means for every region and re-cut the bands from the new
+  numbers** before release. Expect each edge to move up roughly 10–15% for
+  coal-exposed regions.
+
+Shipping coal without re-cutting the bands would shove MISO and SPP into
+"carbon-heavy"/"very carbon-heavy" purely as an artefact of the factor change,
+which is not the same thing as a real recalibration.
+
+**The meta-point, stated plainly:** fixing gas while leaving coal at a value
+*below* the US combustion-only rate would be internally inconsistent. The brief
+asked about gas; applying the same test to the whole table finds two more
+failures, and they are larger than the one asked about.
+
+### 2d. `DIRECT_FACTORS` — dead code, and also wrong
+
+`DIRECT_FACTORS` (coal 1000, gas 450, oil 850) is referenced **nowhere**:
+`grep -rn "DIRECT_FACTORS" src` returns only its own definition, despite the
+comment claiming it is "kept for the 'how we calculate' panel". Against EIA
+measured combustion rates, coal 1000 (vs 1,048) and gas 450 (vs 435) are close
+enough; **oil 850 vs 1,116 is not**. Either correct oil to `1115` or delete the
+table. Zero user-visible impact today, so low priority.
+
+---
+
+## 3. Appliance and habit assumptions
+
+Checked against ENERGY STAR, DOE/AFDC and EIA figures, plus first-principles
+arithmetic wherever the appliance's own description implies a physical
+calculation.
+
+| Appliance | App value | Real-world | Verdict |
+|---|---|---|---|
+| Dishwasher | 1.2 kWh / 2 h | ENERGY STAR ceiling 240 kWh/yr ÷ 215 cycles/yr = **1.12 kWh/cycle** ([ENERGY STAR](https://www.energystar.gov/products/dishwashers/key_product_criteria), verified) | **Fine.** 1.2 sits just above the ES ceiling — reasonable with heated dry. |
+| Washing machine | 0.6 kWh / 1 h | 0.5–1.0 kWh/load typical | **Fine**, with an energy-boundary caveat — see HABITS below. |
+| Clothes dryer | 2.5 kWh / **1.5 h** | kWh: ~730 kWh/yr ÷ ~283 loads ≈ **2.58**. Duration: real cycles run **40–70 min**. | **kWh fine; duration too long → `durationHours: 1`.** |
+| EV charging | 30 kWh / 4 h | DOE/AFDC default 3.6 mi/kWh ⇒ 27.8 kWh/100 mi ([AFDC](https://afdc.energy.gov/vehicles/electric-emissions-sources)); 30 kWh ÷ 7.7 kW ≈ 3.9 h | **Fine.** Both halves land well. |
+| **Water heater** | **4 kWh / 2 h** | Sensible heat: `kWh = gal × 8.34 × ΔT°F ÷ 3412`. 50 gal, 55→120 °F = **7.9 kWh**; 40 gal, 63 °F rise = **6.2 kWh**. | **Wrong for its own label → `kWhPerRun: 7`.** See below. |
+| Central AC pre-cool | 6 kWh / 2 h | ~3 kW ≈ a 3-ton unit (2.4–3.5 kW typical) | **Fine.** |
+| Heat pump boost | 5 kWh / 2 h | 1.5–3.5 kW for mid-size systems | **Fine** for compressor-only. Cold-climate resistance backup would exceed it, which is acceptable for a "typical" case. |
+| Electric oven | 2.3 kWh / 1 h | Element cycling puts steady-state baking nearer **1.5–2.0 kWh/h**; 2.3 works if preheat is included | **Slightly high.** Optional → `2.0`. |
+| Pool pump | 7.5 kWh / 6 h (1.25 kW) | Single-speed pumps draw **1.5–2.5 kW** ⇒ 9–15 kWh over 6 h. 1.25 kW is realistic only for a **variable-speed** pump. | **Relabel** as variable-speed, or raise to `11`. |
+| Home battery | 10 kWh / 3 h | ~3.3 kW charge rate is normal for home storage | **Fine.** |
+| Charge devices | 0.3 kWh / 2 h | Laptop ~60 W + tablet ~15 W + 2 phones ~10 W over 2 h ≈ 0.19–0.25 kWh | **Fine**, marginally generous. |
+| Vacuum / chores | 0.8 kWh / 1 h | Uprights 600–1,400 W | **Fine.** |
+
+### The water heater, in detail
+
+The assumption text reads "a full electric tank reheat, about 4 kWh over 2
+hours". The physics of a full reheat does not give 4 kWh:
+
+```
+kWh = gallons × 8.34 lb/gal × ΔT°F ÷ 3,412 Btu/kWh
+
+50 gal, 55 °F → 120 °F (ΔT 65):  7.9 kWh
+45 gal, 55 °F → 120 °F (ΔT 65):  7.1 kWh
+40 gal, 57 °F → 120 °F (ΔT 63):  6.2 kWh
+```
+
+**Recommendation: `kWhPerRun: 4 → 7`** (a mid-fleet 40–50 gallon tank),
+defensible range 6–8.5. The alternative is to keep 4 and describe it as a
+*partial* reheat — but then the word "full" has to go.
+
+*On a competing figure:* a 9 kWh value can be reached by multiplying a 4,500 W
+element by the app's own assumed 2-hour duration. That reasoning is circular —
+it treats an app assumption as a physical input — and it additionally assumes
+the element never cycles off. The sensible-heat calculation above is the
+defensible route, and it lands at 6–8.5.
+
+**Severity:** High. The water heater is a commonly selected appliance, and this
+is a ~75% understatement of its gram totals. Percentages are unaffected.
+
+### HABITS
+
+- **`lights-off: 0.3` → `0.1`.** The detail text says "three LED bulbs left off
+  for an evening". Three 9 W LEDs × 4 h = **0.108 kWh**. The value is ~3× its
+  own description. Either lower it to `0.1` or rewrite the text to describe a
+  whole house's evening lighting. **Medium severity** — it inflates a habit
+  users can log repeatedly, so the error compounds in the running total.
+- **`cold-wash: 0.5`** — no number change, but it deserves a code comment.
+  Against the washer's own 0.6 kWh warm-wash baseline this implies ~83% of the
+  cycle is water heating, which is the share usually quoted for a *hot* wash.
+  The likely explanation is that the two figures use different energy
+  boundaries: `kWhPerRun: 0.6` looks like the machine's own draw (most US
+  washers draw pre-heated water from the house tank), while `cold-wash: 0.5`
+  also credits the water heater's avoided reheat. Both are defensible; side by
+  side they read as contradictory. One comment fixes it.
+- **`air-dry: 2.5`** — matches the dryer's `kWhPerRun` exactly. **Fine.**
+- **`thermostat: 1.5`** — plausible (≈5% of a ~30 kWh cooling day). The
+  *wording* needs a nudge — see #4.
+- **`unplug: 0.4`** — a conservative subset of a 5–10% standby load. **Fine.**
+- **`shorter-shower: 1.2`** — 3 min at 2.5 gpm with a 65 °F rise = 1.19 kWh.
+  **Fine** (a WaterSense head would be ~0.9).
+- **`full-loads: 1.2`** — one avoided dishwasher/washer cycle. **Fine.**
+
+---
+
+## 4. `TIPS` and `FAQ` factual claims
+
+| Claim | Verdict | Detail |
+|---|---|---|
+| "Standby power is about 5–10% of a typical home's electricity" | **Keep** | The 5–10% range is consistently attributed to DOE and to LBNL's standby-power research programme ([standby.lbl.gov](https://standby.lbl.gov/)). I could not load a primary DOE page stating that exact range this session — **well-corroborated via secondary sources; primary not verified.** |
+| "Heating and cooling are the largest slice of most electricity bills" | **Accurate — keep** | EIA: air conditioning **19%** + space heating **12%** = 31% of home electricity, ahead of water heating (12%), lighting and refrigeration. Verified directly at [EIA, electricity use in homes](https://www.eia.gov/energyexplained/use-of-energy/electricity-use-in-homes.php). The "electricity bills" framing is the correct one — the frequently quoted "~50% of home energy" figure is *total site energy* including gas. |
+| "Two degrees is about 5% of that" | **Soften → "roughly 2–5%"** | DOE's published rule of thumb is **~1% per degree for an 8-hour setback** ([energy.gov](https://www.energy.gov/energysaver/thermostats)). A sustained all-day 2 °F change is a larger intervention than that example, so 5% is reachable but sits at the aggressive edge of the guidance. "Roughly 2–5%" is honest and still motivating. Applies to the `TIPS` entry **and** the `HABITS.thermostat` detail line, which carry the same claim. |
+| "Most of a wash cycle's energy goes into heating water" | **Accurate — keep** | ~90% is the commonly cited share for hot washes; directionally right for warm. Qualitative, so no number to fix. |
+| "An LED uses about a fifth of what an incandescent does" | **Accurate — keep** | ENERGY STAR: LEDs use "at least 75% less energy" (≤¼), and real swaps (60 W → 8–12 W) land between ⅕ and ⅐. "About a fifth" is fair. |
+| "It's the second-biggest energy user in a typical home" (water heater) | **Defensible — keep** | On EIA's electricity breakdown, water heating (12%) *ties* space heating (12%) behind AC (19%) as an individual end use. But the app's own adjacent tip groups "heating and cooling" (31%) — and under that grouping water heating **is** second. It is also second in total household site energy, after space heating. Optional nudge: say "your **electric** water heater", since roughly half of US homes heat water with gas and would see nothing of it on an electricity bill. |
+| "A dryer load is roughly 2.5 kWh" | **Accurate — keep** | Matches the EIA-derived ~2.58 kWh/load and the app's own constant. |
+
+### One copy inconsistency to fix
+
+`src/app/tips/page.tsx` tells users the factor table is "IPCC AR5 medians, the
+same basis Electricity Maps uses". That is **already untrue for oil** (AR5 has
+no oil category at all), and would become untrue for gas and coal if #2 is
+adopted. Reword to something like: "IPCC AR5 lifecycle medians for most fuels,
+with coal, gas and oil adjusted to the measured US fleet average (EIA)" — and
+keep it in sync with whatever `emissions.ts` ends up saying.
+
+---
+
+## 5. Average vs marginal — the caveat
+
+Full write-up is in [`METHODOLOGY.md` §7](./METHODOLOGY.md). No constant
+changes. What is and is not verifiable:
+
+**Verified this session.** WattTime's own explainer confirms the two signals can
+point in *opposite* directions, with a concrete example: a large new load on a
+hydro-rich grid looks clean by average accounting, while in reality the hydro
+was already committed and the new load ramps a fossil peaker
+([watttime.org](https://watttime.org/data-science/data-signals/average-vs-marginal/)).
+That page gives **no** quantitative divergence estimate — I checked
+specifically for one.
+
+**Cited but not re-verified.** The foundational US study is Siler-Evans,
+Azevedo & Morgan, "Marginal Emissions Factors for the U.S. Electricity System",
+*Environ. Sci. Technol.* 46(9), 4742–4748 (2012),
+[doi:10.1021/es300145v](https://doi.org/10.1021/es300145v). The DOI resolves
+(checked 23 Aug 2026), but ACS returns HTTP 403 and the PDF mirror would not
+extract to text, so **I did not verify its specific numbers and have not quoted
+any figure from it.**
+
+**Could not verify at all — stated as a gap rather than filled with a guess.** A
+published figure for (a) how often average and marginal disagree in *sign*, or
+(b) a typical percentage error from using average as a proxy for marginal. I
+looked and did not find one. `METHODOLOGY.md` §7 says so explicitly instead of
+inventing a number, which is the honest position for a general-audience caveat.
+
+**Existing UI copy** (`src/app/tips/page.tsx`: "We use average emissions, not
+marginal… can differ from the grid average and occasionally even points the
+other way") is directionally correct and needs no rewrite.
+
+---
+
+## 6. The other factor choices
+
+- **Lifecycle rather than combustion-only as the default: correct, keep it.** It
+  gives solar, wind and nuclear small non-zero values, which is both more
+  honest and easier to explain than implying they are free. It also matches
+  Electricity Maps' default basis, so numbers stay comparable across tools.
+- **Coal 820, nuclear 12, hydro 24, solar 48, wind 11:** all match the widely
+  reproduced IPCC AR5 WG3 Annex III Table A.III.2 medians. *(Unverified against
+  the primary PDF — ipcc.ch returned HTTP 403 for the Annex III PDF on 23 Aug
+  2026; values match the table as reproduced across secondary sources.)* Coal's
+  separate **US-fleet** problem is #2c.
+- **Oil 650 — the citation is wrong as well as the value.** AR5 Annex III has no
+  oil/petroleum category (oil is under 2% of global generation and was not
+  modelled), so the code comment "IPCC AR5 (WG3 Annex III) medians" overclaims
+  provenance for that row. Fix the comment regardless of whether you take the
+  value change in #2b.
+- **`OTH`/`UNK` at 300: reasonable, and already honestly caveated.** A genuine
+  EIA grab-bag (landfill gas, waste heat, non-biogenic municipal waste,
+  petroleum coke, unclassified units) with no single published factor. 300 sits
+  between AR5's dedicated-biomass median (230) and waste-to-energy (frequently
+  cited above 500 net, because of the fossil-derived fraction of municipal
+  waste). The existing code comment says exactly this rather than dressing it up
+  as a citation — good practice. **No change.** I could not find a published
+  composition breakdown for the bucket in EIA-930: **unverified**.
+- **`GEO` at 38, pulled out of the "Other" bucket: correct, keep.** Consistent
+  with AR5's geothermal median, and the brief confirms that bucketing it at 300
+  overstated CAISO by ~7 gCO₂e/kWh. The underlying pattern — code-level factors
+  preferred over bucket factors — is the right architecture, and it is worth
+  applying anywhere else EIA reports a specific code inside a mixed bucket.
+- **Excluding storage from the mix: correct.** A battery moves energy rather
+  than making it; counting discharge at 0 g/kWh would credit the grid twice for
+  the same clean electron.
+
+---
+
+## 7. Things I checked that are fine
+
+Stated plainly rather than padded into findings: the dishwasher, washer, EV,
+AC, heat-pump, home-battery, devices and vacuum energy figures; the `air-dry`,
+`unplug`, `shorter-shower` and `full-loads` habit values; the standby-power,
+heating/cooling-share, cold-wash, LED, water-heater-ranking and dryer-kWh copy
+claims; the lifecycle-over-combustion choice; the geothermal special case; the
+`OTH`/`UNK` bucket; the nuclear, hydro, solar and wind factors; the exclusion
+of storage; the baseline-is-now choice in `planWindows()`; the 48-hour
+recommendation cap; and the demand-correlation gate (applying CISO/PJM/ISNE,
+rejecting SPP/ERCOT on |r| and n rather than by hand) — which is a genuinely
+good piece of modelling discipline and worth keeping as the pattern for any
+future correction.
+
+---
+
+## Appendix: verification log
+
+| Claim | How verified | Result |
+|---|---|---|
+| EIA gas/coal/oil fleet rates | Fetched [EIA FAQ 74](https://www.eia.gov/tools/faqs/faq.php?id=74&t=11) | ✅ 2023: coal 2.31, gas 0.96, petroleum 2.46 lb CO₂/kWh |
+| Gas heat rates by prime mover | Fetched [EIA EPA Table 8.2](https://www.eia.gov/electricity/annual/html/epa_08_02.html) | ✅ 2024: CC 7,548, steam 10,337, GT 10,999 Btu/kWh |
+| Natural gas carbon coefficient | Fetched [EIA carbon coefficients](https://www.eia.gov/environment/emissions/co2_vol_mass.php) | ✅ 52.91 kg CO₂/MMBtu |
+| eGRID subregion rates | Fetched eGRID2023 subregion table | ✅ 11 subregions, 195–637 gCO₂e/kWh |
+| EIA home electricity end-use shares | Fetched [EIA electricity use in homes](https://www.eia.gov/energyexplained/use-of-energy/electricity-use-in-homes.php) | ✅ AC 19%, space heating 12%, water heating 12% |
+| ENERGY STAR dishwasher criteria | Fetched [ENERGY STAR](https://www.energystar.gov/products/dishwashers/key_product_criteria) | ✅ ≤240 kWh/yr standard, 215 cycles/yr test basis |
+| DOE thermostat rule of thumb | energy.gov guidance | ✅ ~1%/°F for an 8-hour setback |
+| WattTime average-vs-marginal | Fetched [WattTime](https://watttime.org/data-science/data-signals/average-vs-marginal/) | ✅ Qualitative divergence confirmed; **no** quantitative estimate given |
+| ISO-NE winter oil burn | Fetched [ISO Newswire, Feb 2026](https://isonewswire.com/2026/02/25/monthly-wholesale-electricity-prices-and-demand-in-new-england-january-2026/) | ✅ Oil + coal ≈24% of Jan 2026 CO₂ |
+| IPCC AR5 Annex III primary PDF | ipcc.ch | ❌ HTTP 403 — values match secondary reproductions; marked unverified |
+| Siler-Evans et al. 2012 full text | DOI → ACS (403); PDF mirror would not extract | ⚠️ DOI resolves; no figures quoted |
+| Hourly gas technology split by BA | Searched | ❌ Not found — **unverified**; no peak multiplier recommended |
+| `OTH`/`UNK` bucket composition | Searched | ❌ Not found — **unverified** |
+| Average-vs-marginal sign-disagreement frequency | Searched | ❌ No published figure — gap stated in methodology |
+
+*Method note: this session's web-search quota was exhausted partway through, so
+later verification used direct fetches against known primary sources
+(eia.gov, epa.gov, energystar.gov, watttime.org). Where that was not possible,
+the gap is marked above rather than papered over.*

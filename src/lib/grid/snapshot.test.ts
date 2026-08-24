@@ -435,7 +435,7 @@ describe("precedence: provider forecast overrides a demand-corrected value", () 
 });
 
 describe("WattTime cross-check surfaces in notes without being blended into the series", () => {
-  it("adds a note with WattTime's independent ranking, and never uses marginal MOER as the series value", async () => {
+  it("reports WattTime's dirtiness index when there is no marginal figure to compare, and never uses marginal MOER as the series value", async () => {
     const fetchImpl: FetchLike = async (url) => {
       if (url.includes("/login")) return jsonResponse(200, { token: "tok" });
       if (url.includes("/v3/signal-index")) {
@@ -452,8 +452,52 @@ describe("WattTime cross-check surfaces in notes without being blended into the 
       wattTimeCredentials: { username: "u", password: "p" },
       fetchImpl,
     });
-    expect(snapshot.notes.some((n) => n.includes("80/100"))).toBe(true);
+    // The forecast is empty here, so we fall back to quoting their index. It
+    // must be described as a ranking against recent conditions on the grid —
+    // not, as an earlier version claimed, a ranking across our next 24 hours.
+    const note = snapshot.notes.find((n) => n.includes("out of 100"));
+    expect(note).toBeDefined();
+    expect(note).toContain("20 out of 100");
+    expect(note).toContain("recent conditions");
+    expect(note).not.toContain("next 24 hours");
     // The series stays at the flat 200 climatology value — MOER never leaks in.
+    expect(snapshot.series[0].gCO2PerKWh).toBe(200);
+  });
+
+  it("explains the average-versus-marginal gap rather than printing two contradictory numbers", async () => {
+    // 934 lbs/MWh is the real CAISO_NORTH marginal rate measured at
+    // 2026-08-23T23:25Z, when the average intensity was 158 gCO2/kWh. Roughly
+    // 424 g/kWh marginal against a 200 g/kWh flat average here.
+    const fetchImpl: FetchLike = async (url) => {
+      if (url.includes("/login")) return jsonResponse(200, { token: "tok" });
+      if (url.includes("/v3/signal-index")) {
+        return jsonResponse(200, {
+          data: [{ point_time: NOW.toISOString(), value: 85 }],
+        });
+      }
+      if (url.includes("/v3/forecast")) {
+        return jsonResponse(200, {
+          data: Array.from({ length: 12 }, (_, i) => ({
+            point_time: new Date(NOW.getTime() + i * 300_000).toISOString(),
+            value: 934.1,
+          })),
+        });
+      }
+      throw new Error(`unexpected call: ${url}`);
+    };
+    const snapshot = await buildSnapshot(REGION, {
+      now: NOW,
+      profile: flatProfile(),
+      wattTimeCredentials: { username: "u", password: "p" },
+      fetchImpl,
+    });
+    const note = snapshot.notes.find((n) => n.includes("marginal"));
+    expect(note).toBeDefined();
+    // Both numbers, and the reason they differ.
+    expect(note).toMatch(/42[0-9] g\/kWh/);
+    expect(note).toContain("200 g/kWh");
+    expect(note).toMatch(/gas/i);
+    // And the series is still the average, untouched by MOER.
     expect(snapshot.series[0].gCO2PerKWh).toBe(200);
   });
 });

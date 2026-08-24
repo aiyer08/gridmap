@@ -80,7 +80,15 @@ export function Sheet({
       const panel = panelRef.current;
       if (!panel) return;
       const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-        (el) => el.offsetParent !== null || el === document.activeElement,
+        (el) => {
+          if (el === document.activeElement) return true;
+          // `offsetParent === null` also fires for legitimately visible
+          // `position: fixed` elements, so it can't stand alone as a
+          // visibility check — fall back to the actual computed style.
+          if (el.offsetParent !== null) return true;
+          const style = getComputedStyle(el);
+          return style.display !== "none" && style.visibility !== "hidden";
+        },
       );
       if (items.length === 0) {
         e.preventDefault();

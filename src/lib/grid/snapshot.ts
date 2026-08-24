@@ -586,10 +586,38 @@ export async function buildSnapshot(
         : "EIA's fuel-mix data runs about half a day behind, so the current hour is modelled from history rather than measured.",
     );
   }
+  /**
+   * WattTime measures something different from the rest of this snapshot, and
+   * the note has to say so.
+   *
+   * Their signal index ranks the *marginal* emissions rate — what the next
+   * kilowatt-hour actually causes — against recent conditions in that region.
+   * It is emphatically not a ranking across our next 24 hours, which is what an
+   * earlier version of this sentence claimed.
+   *
+   * The two can disagree sharply and it is not an error when they do. Measured
+   * on 2026-08-23 at 23:25Z in CAISO_NORTH: average intensity 158 gCO2/kWh
+   * while WattTime's marginal rate was 934 lbs/MWh (~424 g/kWh), because the
+   * plant that responds to one more unit of demand is gas even when the average
+   * is full of midday solar. Stating both numbers without explaining that would
+   * just read as a contradiction.
+   */
   if (wattTime?.rawIndex !== null && wattTime?.rawIndex !== undefined) {
-    notes.push(
-      `WattTime independently ranks right now at ${Math.round(wattTime.cleanlinessPercentile ?? 0)}/100 for cleanliness among the next 24 hours.`,
-    );
+    const marginalNow = wattTime.marginalForecast[0]?.gCO2PerKWh;
+    const averageNow = series[0]?.gCO2PerKWh;
+    if (
+      marginalNow !== undefined &&
+      averageNow !== undefined &&
+      Math.abs(marginalNow - averageNow) > 40
+    ) {
+      notes.push(
+        `WattTime puts the *marginal* emissions of your next kilowatt-hour at about ${Math.round(marginalNow)} g/kWh, against a grid average of ${Math.round(averageNow)} g/kWh. Both are right: the average includes all the solar on the system, while the plant that ramps up for extra demand is usually gas. We use the average for the headline because it is what every region publishes.`,
+      );
+    } else {
+      notes.push(
+        `WattTime rates the marginal emissions right now at ${Math.round(wattTime.rawIndex)} out of 100 for dirtiness, ranked against recent conditions on your grid.`,
+      );
+    }
   }
   const credentials = credentialStatus();
   if (!credentials.electricityMaps && !isModelled) {

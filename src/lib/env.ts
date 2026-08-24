@@ -43,16 +43,25 @@ export function hasElectricityMapsToken(): boolean {
 }
 
 export interface WattTimeCredentials {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
+  token?: string;
 }
 
-/** WattTime needs both halves of a basic-auth pair to be usable. */
+/**
+ * WattTime accepts either a basic-auth pair or a pre-issued bearer token.
+ *
+ * Username/password is preferred: their tokens expire 30 minutes after issue,
+ * so a token-only configuration works once and then quietly stops. We take the
+ * pair when both halves are present and fall back to the token otherwise.
+ */
 export function wattTimeCredentials(): WattTimeCredentials | null {
   const username = read("WATTTIME_USERNAME");
   const password = read("WATTTIME_PASSWORD");
-  if (!username || !password) return null;
-  return { username, password };
+  if (username && password) return { username, password };
+  const token = read("WATTTIME_API_TOKEN");
+  if (token) return { token };
+  return null;
 }
 
 export function hasWattTimeCredentials(): boolean {

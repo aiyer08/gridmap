@@ -10,7 +10,7 @@
  * 2. Be hydration-safe. Nothing reads `localStorage` during render; the list
  *    loads in an effect and `ready` says when it's real. Until then the totals
  *    are honest zeros, which match on the server and the client.
- * 3. Pick up the right store. Local by default, Supabase once someone signs in,
+ * 3. Pick up the local store (the only one — there are no accounts),
  *    and the anonymous history follows them across.
  */
 
@@ -31,7 +31,6 @@ import {
   type TrackerStore,
 } from "./store";
 import { localStore } from "./localStore";
-import { isSupabaseConfigured, onAuthStateChange } from "./supabaseClient";
 import {
   DEFAULT_TIMEZONE,
   summarise,
@@ -147,16 +146,6 @@ export function useTracker(options: UseTrackerOptions = {}): UseTrackerResult {
       storeRef.current = store;
       setSource(picked);
 
-      // Signing in shouldn't feel like starting over: bring the anonymous
-      // history along. Deduped remotely, so running it every sign-in is safe.
-      if (picked === "supabase") {
-        try {
-          const { migrateLocalToSupabase } = await import("./supabaseStore");
-          await migrateLocalToSupabase(localStore, store);
-        } catch {
-          // The migration is a nice-to-have; a failure must not block the read.
-        }
-      }
       if (cancelled) return;
 
       try {
@@ -185,15 +174,6 @@ export function useTracker(options: UseTrackerOptions = {}): UseTrackerResult {
       void store.list().then((loaded) => setActions([...loaded].sort(byNewest)));
     });
   }, [storeEpoch, ready]);
-
-  // Sign-in/sign-out swaps the backing store underneath us.
-  useEffect(() => {
-    if (!isSupabaseConfigured()) return;
-    return onAuthStateChange(() => {
-      setReady(false);
-      setStoreEpoch((n) => n + 1);
-    });
-  }, []);
 
   /* ---------------- writes ---------------- */
 

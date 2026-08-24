@@ -89,9 +89,21 @@ export function wattTimeRegionForBa(ba: string): string | null {
   return WATTTIME_REGIONS[ba.toUpperCase()] ?? null;
 }
 
+/**
+ * Either a username/password pair (which we exchange for a token) or an
+ * already-issued bearer token.
+ *
+ * WattTime's own portal hands out a raw bearer token, so accepting one directly
+ * is a real convenience — but note it **expires 30 minutes after issue**, so a
+ * token-only setup stops working almost immediately and degrades to our own
+ * model. Username and password are what make this durable, because we can mint
+ * a fresh token on every request.
+ */
 export interface WattTimeCredentials {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
+  /** A pre-issued bearer token. Short-lived; prefer username/password. */
+  token?: string;
 }
 
 export interface WattTimeOptions {
@@ -136,7 +148,7 @@ function attribution(
 }
 
 function basicAuthHeader(credentials: WattTimeCredentials): string {
-  const raw = `${credentials.username}:${credentials.password}`;
+  const raw = `${credentials.username ?? ""}:${credentials.password ?? ""}`;
   // Buffer in Node, btoa on the edge. Both exist somewhere; neither everywhere.
   if (typeof globalThis.btoa === "function") return `Basic ${globalThis.btoa(raw)}`;
   const maybeBuffer = (globalThis as { Buffer?: { from(input: string, enc: string): { toString(enc: string): string } } }).Buffer;
@@ -188,6 +200,34 @@ function errorDetail(body: unknown, status: number): string {
 export interface WattTimeLoginResult {
   token: string | null;
   detail: string;
+}
+
+/**
+ * Is this JWT already past its expiry? Purely a courtesy check so we can give a
+ * useful message; the API is still the authority.
+ */
+export function isExpiredJwt(token: string, now = Date.now()): boolean {
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    const json = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const decode =
+      typeof globalThis.atob === "function"
+        ? globalThis.atob(json)
+        : String(
+            (
+              globalThis as {
+                Buffer?: { from(i: string, e: string): { toString(e: string): string } };
+              }
+            ).Buffer?.from(json, "base64").toString("utf8") ?? "",
+          );
+    const payload = JSON.parse(decode) as { exp?: number };
+    if (typeof payload.exp !== "number") return false;
+    return now >= payload.exp * 1000;
+  } catch {
+    // Not a JWT we can read — let the API decide.
+    return false;
+  }
 }
 
 /** Exchange basic-auth credentials for a 30-minute bearer token. */
@@ -287,7 +327,9 @@ export async function fetchWattTime(
   });
 
   const credentials = options.credentials;
-  if (!credentials?.username || !credentials?.password) {
+  const hasLogin = Boolean(credentials?.username && credentials?.password);
+  const hasToken = Boolean(credentials?.token);
+  if (!hasLogin && !hasToken) {
     return empty("No WATTTIME_USERNAME / WATTTIME_PASSWORD set.");
   }
   if (!region) {
@@ -297,10 +339,25 @@ export async function fetchWattTime(
   if (!doFetch) return empty("No fetch implementation available.");
   const base = options.baseUrl ?? WATTTIME_BASE_URL;
 
-  const login = await wattTimeLogin({ credentials, fetchImpl: doFetch, baseUrl: base });
-  if (!login.token) return empty(`Sign-in failed — ${login.detail}`);
+  // A supplied token is used as-is; otherwise trade credentials for a fresh one.
+  let token = credentials!.token ?? null;
+  if (!token) {
+    const login = await wattTimeLogin({
+      credentials: credentials!,
+      fetchImpl: doFetch,
+      baseUrl: base,
+    });
+    if (!login.token) return empty(`Sign-in failed — ${login.detail}`);
+    token = login.token;
+  } else if (isExpiredJwt(token)) {
+    // Fail with a message that names the actual problem rather than surfacing
+    // an opaque 401 from the API.
+    return empty(
+      "The WattTime token has expired — they last 30 minutes. Set WATTTIME_USERNAME and WATTTIME_PASSWORD so a fresh one can be fetched automatically.",
+    );
+  }
 
-  const headers = { Authorization: `Bearer ${login.token}` };
+  const headers = { Authorization: `Bearer ${token}` };
   const horizon = Math.min(72, Math.max(1, Math.floor(options.horizonHours ?? 72)));
   const query = `region=${encodeURIComponent(region)}&signal_type=co2_moer`;
 

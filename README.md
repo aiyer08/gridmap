@@ -41,10 +41,14 @@ Two more optional keys sharpen the current-hour reading beyond what the EIA's
 None of these are required, and the app tells you in the UI which of them
 it's actually using for a given answer.
 
-Signing in (magic link, via Supabase) is also optional — it exists only so
-your logged history follows you to another device. With no Supabase env vars
-set, everything is saved to the browser's `localStorage` instead, and nothing
-in the UI is gated behind an account.
+There are no accounts, and that's intentional rather than a missing feature.
+Everything you log is saved to the browser's `localStorage` and never sent
+anywhere — no sign-up, no email, no database of household energy habits to
+look after. The tradeoff is the obvious one: clearing browser data clears
+your history, and GridMap on your phone starts a fresh tally from GridMap on
+your laptop. `src/lib/track/store.ts` is the one place that decision lives,
+and it's written so a synced backend could be added later without the UI
+changing.
 
 ## Project layout
 

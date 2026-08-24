@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Car, Leaf, Smartphone, Trash2, TreePine } from "lucide-react";
 import { ImpactSparkline } from "@/components/charts/ImpactSparkline";
-import { SignInCard } from "@/components/auth/SignInCard";
+import { StorageNotice } from "@/components/auth/StorageNotice";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -252,7 +252,7 @@ export function ImpactView() {
       </section>
 
       <div className="mt-10">
-        <SignInCard />
+        <StorageNotice />
       </div>
 
       {hasHistory ? (
