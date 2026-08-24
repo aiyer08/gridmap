@@ -3,7 +3,6 @@ import { getAppliance } from "./appliances";
 import {
   ABSOLUTE_BANDS,
   absoluteLabel,
-  absoluteTone,
   cheerFor,
   declineMessage,
   describeMix,
@@ -70,23 +69,48 @@ describe("absolute bands", () => {
   });
 
   it("labels real US grids the way a person would", () => {
-    // Measured 14-day means from live EIA data.
-    expect(absoluteLabel(75)).toBe("very clean"); // Pacific Northwest hydro
-    expect(absoluteLabel(150)).toBe("very clean"); // CAISO midday
-    expect(absoluteLabel(290)).toBe("clean"); // CAISO overnight
-    expect(absoluteLabel(500)).toBe("carbon-heavy"); // MISO
-    expect(absoluteLabel(800)).toBe("very carbon-heavy");
+    // Hourly means from the committed profiles, current emissions factors.
+    expect(absoluteLabel(74)).toBe("very clean"); // BPA, Pacific NW hydro
+    expect(absoluteLabel(233)).toBe("clean"); // CAISO
+    expect(absoluteLabel(344)).toBe("middling"); // ISO-NE
+    expect(absoluteLabel(439)).toBe("middling"); // PJM
+    expect(absoluteLabel(545)).toBe("carbon-heavy"); // MISO
+    expect(absoluteLabel(953)).toBe("very carbon-heavy"); // LG&E, Kentucky coal
   });
 
-  it("never calls a coal-heavy grid clean", () => {
-    // MISO's *cleanest* hour is around 426 g/kWh; it must not read as clean
-    // just because it is that grid's best.
-    expect(absoluteTone(426)).not.toBe("clean");
+  it("puts every edge inside a gap where no real grid sits", () => {
+    // If an edge landed inside a grid's range, that grid's label would flip
+    // back and forth hour to hour for no reason a user could perceive.
+    const occupiedRanges: [number, number][] = [
+      [63, 83], // BPAT
+      [157, 296], // CISO
+      [313, 341], // NYIS
+      [417, 468], // PJM
+      [503, 598], // MISO
+      [835, 944], // SC
+      [925, 973], // LGEE
+    ];
+    for (const edge of Object.values(ABSOLUTE_BANDS)) {
+      for (const [lo, hi] of occupiedRanges) {
+        expect(
+          edge < lo || edge > hi,
+          `band edge ${edge} falls inside a real grid range ${lo}-${hi}`,
+        ).toBe(true);
+      }
+    }
   });
 
-  it("gives every label a tone", () => {
+  it("never calls a coal-heavy grid clean, and keeps it distinct from a mild one", () => {
+    // MISO's *cleanest* hour (503) must not read as clean just because it is
+    // that grid's best, and it must not share a label with New England's
+    // typical hour (344). This pair is why the bands get re-derived.
+    expect(absoluteLabel(503)).toBe("carbon-heavy");
+    expect(absoluteLabel(344)).toBe("middling");
+    expect(absoluteLabel(503)).not.toBe(absoluteLabel(344));
+  });
+
+  it("gives every value a label", () => {
     for (const value of [0, 50, 150, 300, 450, 650, 900, 1200]) {
-      expect(["clean", "okay", "dirty"]).toContain(absoluteTone(value));
       expect(absoluteLabel(value).length).toBeGreaterThan(3);
     }
   });

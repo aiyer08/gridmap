@@ -123,7 +123,7 @@ export function useTracker(options: UseTrackerOptions = {}): UseTrackerResult {
   const [source, setSource] = useState<TrackerSource>("local");
   const [error, setError] = useState<string | null>(null);
   // Bumped on sign-in/sign-out to re-pick the store and reload from it.
-  const [storeEpoch, setStoreEpoch] = useState(0);
+  const [storeEpoch] = useState(0);
 
   // Day-granular, so the initial server and client values agree in practice;
   // refreshed on a timer so a long-open tab rolls over at midnight.

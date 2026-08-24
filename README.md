@@ -56,18 +56,17 @@ changing.
 src/app/                  Next.js App Router pages (/, /impact, /tips) and the one API route
 src/app/api/grid/         GET /api/grid — the only dynamic route; calls the EIA API server-side
 src/components/app/       The main UI: today's forecast, appliance picker, run-window suggestions
-src/components/auth/      SignInCard and the session hook (Supabase magic link)
+src/components/auth/      StorageNotice — the card on /impact explaining there's no account, by design
 src/components/charts/    The intensity/CO2 charts
 src/components/ui/        Shared primitives (buttons, cards, toasts, theme)
 src/lib/grid/             Grid intensity: EIA/Electricity Maps/WattTime clients, climatology,
                           the tiered profile resolver, and 25 pre-built regional profiles
                           under data/profiles/ (npm run build:profiles regenerates these)
-src/lib/track/            The tracker's storage layer — localStorage and Supabase implementations
-                          behind one interface, plus the useTracker hook the UI calls
+src/lib/track/            The tracker's storage layer — a localStorage-backed store behind one
+                          interface, plus the useTracker hook the UI calls
 src/lib/region/           ZIP -> balancing authority resolution
-supabase/                 schema.sql (one table, RLS-scoped) and setup notes
 scripts/build-profiles.ts Rebuilds the committed EIA profiles in src/lib/grid/data/profiles/
-docs/                     METHODOLOGY.md (the science) and DEPLOYMENT.md (Supabase + Vercel runbook)
+docs/                     METHODOLOGY.md (the science) and DEPLOYMENT.md (Vercel deploy runbook)
 ```
 
 ## Scripts
@@ -87,6 +86,6 @@ docs/                     METHODOLOGY.md (the science) and DEPLOYMENT.md (Supaba
 - [docs/METHODOLOGY.md](docs/METHODOLOGY.md) — where the numbers come from: the
   EIA climatology, the demand nowcast, how Electricity Maps and WattTime are
   blended in (or deliberately not), and the confidence labelling.
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — the runbook for standing up
-  Supabase and deploying to Vercel, including a post-deploy smoke test and
-  troubleshooting for the failures that actually happen.
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — the runbook for deploying to
+  Vercel, including a post-deploy smoke test and troubleshooting for the
+  failures that actually happen.

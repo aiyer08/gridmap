@@ -254,10 +254,17 @@ describe("long appliance runs", () => {
     expect(best.baselineGrams - best.gramsCO2).toBeGreaterThan(4000);
   });
 
-  it("blends the part-hour of a 90-minute dryer cycle", () => {
-    // One hour clean, everything else dirty: a 1.5h run must land between.
+  it("blends the part-hour of a run that doesn't land on a whole hour", () => {
+    // No catalogue appliance has a fractional duration today, so use a synthetic
+    // 90-minute load. One hour clean, everything else dirty: the run must land
+    // between the two, weighted by how much of it falls in each clock hour.
+    const ninetyMinutes = {
+      ...getAppliance("dryer"),
+      id: "synthetic-90min",
+      durationHours: 1.5,
+    };
     const snapshot = makeSnapshot((h) => (h === 12 ? 100 : 300));
-    const plan = planWindows(snapshot, getAppliance("dryer"));
+    const plan = planWindows(snapshot, ninetyMinutes);
     const best = plan.windows[0];
     // Starting at 12:00 → 1h at 100 plus 0.5h at 300, weighted = 166.7.
     expect(best.avgIntensity).toBeCloseTo((100 * 1 + 300 * 0.5) / 1.5, 0);

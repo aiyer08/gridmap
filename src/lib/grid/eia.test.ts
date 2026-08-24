@@ -368,8 +368,8 @@ describe("rowsToSamples", () => {
       { period: t0, fueltype: "NG", value: 500 },
     ];
     const samples = rowsToSamples(rows);
-    // (500*38 + 500*490) / 1000 = 264, not (500*300 + 500*490)/1000 = 395.
-    expect(samples[0].gCO2PerKWh).toBeCloseTo(264, 0);
+    // (500*38 + 500*530) / 1000 = 284, not (500*300 + 500*530)/1000 = 395.
+    expect(samples[0].gCO2PerKWh).toBeCloseTo(284, 0);
   });
 });
 

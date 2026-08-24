@@ -36,19 +36,34 @@ export interface Verdict {
   cleanlinessPercentile: number;
 }
 
-/** Absolute bands, in gCO2e/kWh, chosen from the spread of US grid regions. */
+/**
+ * Absolute bands in gCO2e/kWh, placed in the *empty gaps* between real US grids
+ * rather than at arbitrary round numbers, so an edge never splits one grid's
+ * typical range down the middle.
+ *
+ * Derived by `npx tsx scripts/derive-bands.ts` from the 25 committed profiles.
+ * Hourly means as of 2026-08-24, cleanest grid to dirtiest: BPA 63–83, CAISO
+ * 157–296, PacifiCorp West 273–335, NYISO 313–341, ISO-NE 324–374, ERCOT
+ * 285–460, PJM 417–468, MISO 503–598, PacifiCorp East 500–806, Santee Cooper
+ * 835–944, LG&E 925–973.
+ *
+ * Each edge below sits inside a real gap where no grid's hourly mean falls:
+ *   150  in the 83→157 gap  (hydro grids alone are "very clean")
+ *   300  in the 296→313 gap (California, and only California, is "clean")
+ *   480  in the 468→500 gap (the big middle: New York through PJM)
+ *   700  in the 629→806 gap (coal-dominated grids stand apart)
+ *
+ * **These must be re-derived whenever an emissions factor changes.** They were
+ * last recut after the coal and oil factors were corrected upward, which moved
+ * every coal-heavy grid by roughly 18% and would otherwise have left MISO and
+ * New England sharing a label.
+ */
 export const ABSOLUTE_BANDS = {
   veryClean: 150,
   clean: 300,
-  moderate: 450,
-  dirty: 650,
+  moderate: 480,
+  dirty: 700,
 } as const;
-
-export function absoluteTone(gPerKWh: number): Tone {
-  if (gPerKWh <= ABSOLUTE_BANDS.clean) return "clean";
-  if (gPerKWh <= ABSOLUTE_BANDS.dirty) return "okay";
-  return "dirty";
-}
 
 export function absoluteLabel(gPerKWh: number): string {
   if (gPerKWh <= ABSOLUTE_BANDS.veryClean) return "very clean";
@@ -214,7 +229,7 @@ export const TIPS: Tip[] = [
   {
     id: "thermostat",
     title: "Move the thermostat two degrees",
-    body: "Heating and cooling are the largest slice of most electricity bills. Two degrees is about 5% of that, and you'll barely notice it.",
+    body: "Heating and cooling are the largest slice of most electricity bills. Two degrees is roughly 2–5% of that, and you'll barely notice it.",
     emoji: "🌡️",
     impact: "big",
   },
@@ -242,7 +257,7 @@ export const TIPS: Tip[] = [
   {
     id: "water-heater",
     title: "Turn the water heater down to 120°F",
-    body: "It's the second-biggest energy user in a typical home, and it holds heat all day whether you use it or not.",
+    body: "An electric water heater is among the biggest energy users in a home — comparable to space heating — and it holds heat all day whether you use it or not.",
     emoji: "🚿",
     impact: "medium",
   },

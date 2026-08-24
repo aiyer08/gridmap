@@ -32,8 +32,8 @@ export const APPLIANCES: Appliance[] = [
     emoji: "🌀",
     category: "laundry",
     kWhPerRun: 2.5,
-    durationHours: 1.5,
-    assumption: "One electric dryer load, about 2.5 kWh over 90 minutes.",
+    durationHours: 1,
+    assumption: "One electric dryer load, about 2.5 kWh over roughly an hour.",
     shiftable: true,
   },
   {
@@ -51,9 +51,10 @@ export const APPLIANCES: Appliance[] = [
     label: "Water heater",
     emoji: "🚿",
     category: "water",
-    kWhPerRun: 4,
+    kWhPerRun: 7,
     durationHours: 2,
-    assumption: "A full electric tank reheat, about 4 kWh over 2 hours.",
+    assumption:
+      "A full electric tank reheat, about 7 kWh over 2 hours. From the physics: a 40-gallon tank raised 70°F needs 40 × 8.34 × 70 ÷ 3412 ≈ 6.8 kWh.",
     shiftable: true,
   },
   {
@@ -83,7 +84,8 @@ export const APPLIANCES: Appliance[] = [
     category: "kitchen",
     kWhPerRun: 2.3,
     durationHours: 1,
-    assumption: "One hour of baking at 350°F, about 2.3 kWh.",
+    assumption:
+      "Preheating plus an hour of baking at 350°F, about 2.3 kWh. Steady baking alone is nearer 2 kWh — the element cycles rather than running flat out.",
     shiftable: true,
   },
   {
@@ -93,7 +95,8 @@ export const APPLIANCES: Appliance[] = [
     category: "other",
     kWhPerRun: 7.5,
     durationHours: 6,
-    assumption: "A 1.25 kW pump running its daily 6-hour filter cycle.",
+    assumption:
+      "A 1.25 kW variable-speed pump on its daily 6-hour filter cycle. An older single-speed pump draws 1.5–2.5 kW, so it would use roughly double this.",
     shiftable: true,
   },
   {
@@ -146,8 +149,8 @@ export const HABITS: Habit[] = [
     id: "lights-off",
     label: "Turned off lights you weren't using",
     emoji: "💡",
-    kWhSaved: 0.3,
-    detail: "Three LED bulbs left off for an evening.",
+    kWhSaved: 0.1,
+    detail: "Three 9-watt LED bulbs left off for an evening.",
   },
   {
     id: "cold-wash",
@@ -168,7 +171,7 @@ export const HABITS: Habit[] = [
     label: "Nudged the thermostat 2°F",
     emoji: "🌡️",
     kWhSaved: 1.5,
-    detail: "Two degrees for a day is roughly 5% of heating or cooling energy.",
+    detail: "Two degrees for a day is roughly 2–5% of heating or cooling energy.",
   },
   {
     id: "unplug",

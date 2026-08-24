@@ -3,15 +3,45 @@ import type { FuelMix, FuelType } from "./types";
 /**
  * Lifecycle carbon intensity by fuel, in grams CO2-equivalent per kWh.
  *
- * Values are IPCC AR5 (WG3 Annex III) medians for lifecycle emissions, which is
- * also what Electricity Maps reports by default. Lifecycle (rather than
- * stack-only) numbers are used so that solar, wind and nuclear are small but
- * non-zero, which is both more honest and easier to explain.
+ * Non-fossil values are IPCC AR5 (WG3 Annex III) lifecycle medians, the same
+ * basis Electricity Maps reports on. Lifecycle rather than stack-only, so solar,
+ * wind and nuclear come out small but non-zero — more honest, and easier to
+ * explain than a zero.
+ *
+ * The three fossil values are **US-fleet-specific and deliberately not AR5**,
+ * because AR5's medians are global figures for representative modern plants and
+ * two of them turned out to be *lower than the US fleet's measured
+ * combustion-only* emissions — which is impossible for the same fleet, since
+ * lifecycle must include combustion. Using EIA's measured 2023 US generation
+ * (Electric Power Annual / EIA FAQ, converted at 453.59237 g/lb):
+ *
+ *   coal 2.31 lb/kWh = 1048 g/kWh combustion   (AR5 lifecycle said 820)
+ *   oil  2.46 lb/kWh = 1116 g/kWh combustion   (AR5 lifecycle said 650)
+ *   gas  0.96 lb/kWh =  435 g/kWh combustion
+ *
+ * So each fossil factor is the measured US combustion figure plus an upstream
+ * (extraction, processing, transport, construction) allowance:
+ *
+ *   coal 1048 + ~60  -> 1100
+ *   oil  1116 + ~85  -> 1200
+ *   gas   435 + ~91  ->  530
+ *
+ * The gas uplift of 91 is AR5's own implied lifecycle premium over combined-cycle
+ * combustion (490 - 399, using EIA's 7,548 Btu/kWh CCGT heat rate and its
+ * 52.91 kg CO2/MMBtu carbon coefficient). Applying it to the *fleet average*
+ * rather than to CCGT alone matters here, because EIA reports every gas plant
+ * under one `NG` code — combined-cycle at ~399 g/kWh combustion alongside
+ * simple-cycle peakers at ~582 — and peakers are exactly what covers the evening
+ * ramp this app tells people to avoid. A flat 490 understated that peak.
+ *
+ * What we deliberately do *not* do is vary the gas factor by hour. It would be
+ * physically right, but EIA-930 carries no technology split to condition on;
+ * doing it properly needs EIA-860/923 plant-level data joined to hourly output.
  */
 export const LIFECYCLE_FACTORS: Record<FuelType, number> = {
-  coal: 820,
-  gas: 490,
-  oil: 650,
+  coal: 1100,
+  gas: 530,
+  oil: 1200,
   nuclear: 12,
   hydro: 24,
   solar: 48,
@@ -21,19 +51,6 @@ export const LIFECYCLE_FACTORS: Record<FuelType, number> = {
   other: 300,
   // Batteries move energy rather than making it; charge/discharge shows up as
   // negative/positive net generation and is excluded from the mix.
-  storage: 0,
-};
-
-/** Direct combustion-only factors, kept for the "how we calculate" panel. */
-export const DIRECT_FACTORS: Record<FuelType, number> = {
-  coal: 1000,
-  gas: 450,
-  oil: 850,
-  nuclear: 0,
-  hydro: 0,
-  solar: 0,
-  wind: 0,
-  other: 230,
   storage: 0,
 };
 

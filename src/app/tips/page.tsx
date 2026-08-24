@@ -96,8 +96,16 @@ export default function TipsPage() {
         <p className="mt-2 text-sm text-ink-3">
           We multiply each fuel your grid is burning by its lifecycle emissions
           factor — grams of CO₂-equivalent per kilowatt-hour, counting
-          construction and fuel supply, not just the smokestack. These are IPCC
-          AR5 medians, the same basis Electricity Maps uses.
+          construction and fuel supply, not just the smokestack.
+        </p>
+        <p className="mt-2 text-sm text-ink-3">
+          The carbon-free rows are IPCC AR5 medians, the same basis Electricity
+          Maps uses. The three fossil rows are <strong>US-specific</strong>
+          instead, because AR5&apos;s global medians for coal and oil are
+          actually <em>lower</em> than what the US fleet measurably emits from
+          combustion alone — which can&apos;t be right, since lifecycle has to
+          include combustion. So those three start from EIA&apos;s measured US
+          generation and add an upstream allowance.
         </p>
         <Card bleed className="mt-4">
           <table className="w-full text-sm">
