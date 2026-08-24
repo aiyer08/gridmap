@@ -87,6 +87,10 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  /* High-contrast editorial serif for display type. Instrument Serif is the
+     closest freely-licensed stand-in for Tiempos Headline Light: same
+     Times-adjacent skeleton, same thin/thick modulation, tight by default. */
+  --font-display: var(--font-instrument-serif), "Times New Roman", Times, serif;
 
   --text-2xs: 0.6875rem; /* 11px */
   --text-2xs--line-height: 1.45;
@@ -119,6 +123,12 @@
   --text-6xl: 3.75rem; /* 60px */
   --text-6xl--line-height: 1;
   --text-6xl--letter-spacing: -0.03em;
+  --text-7xl: 4.5rem; /* 72px */
+  --text-7xl--line-height: 0.96;
+  --text-7xl--letter-spacing: -0.028em;
+  --text-8xl: 6rem; /* 96px */
+  --text-8xl--line-height: 0.92;
+  --text-8xl--letter-spacing: -0.03em;
 
   /* ---- radii ---- */
   --radius-xs: 4px;
@@ -140,6 +150,9 @@
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.42, 0.64, 1);
+  /* The reference's own curve, read off its computed styles: a symmetric ease
+     that starts and stops flat. Used for reveals and marquee hand-offs. */
+  --ease-editorial: cubic-bezier(0.44, 0, 0.56, 1);
 
   --animate-shimmer: shimmer 1.6s var(--gm-ease-in-out-soft) infinite;
   --animate-rise: rise var(--gm-dur-3) var(--gm-ease-out-soft) both;
@@ -152,66 +165,82 @@
 :root {
   color-scheme: light;
 
-  /* surfaces: near-white page, pure-white cards */
-  --gm-page: #fafaf9;
-  --gm-surface: #ffffff;
-  --gm-surface-2: #f6f6f4;
-  --gm-surface-3: #efefec;
-  --gm-hairline: #eaeae6;
-  --gm-border: #dededa;
-  --gm-border-strong: #c9c9c4;
+  /* Surfaces: warm creams, not neutral greys. Sampled from the reference's
+     #fffefb / #fff9ee / #f8f4f0 family — the whole app should feel like paper
+     under warm light rather than a dashboard. */
+  --gm-page: #fdf8f0;
+  --gm-surface: #fffefb;
+  --gm-surface-2: #f8f2e8;
+  --gm-surface-3: #f1e9dc;
+  --gm-hairline: #e8ded794;
+  --gm-border: #ded2c4;
+  --gm-border-strong: #c9b9a6;
 
-  --gm-ink: #16171a; /* 17.9:1 */
-  --gm-ink-2: #5a5c63; /* 6.7:1  */
-  --gm-ink-3: #767980; /* 4.4:1  */
-  --gm-ink-4: #a1a4ab; /* decorative only */
-  --gm-ink-inv: #ffffff;
+  /* Ink is a warm near-black (#201515 family), never a cold grey. */
+  --gm-ink: #201515; /* 16.4:1 on --gm-surface */
+  --gm-ink-2: #574843; /* 7.7:1 */
+  --gm-ink-3: #726259; /* 5.3:1 */
+  --gm-ink-4: #a3928a; /* decorative only */
+  --gm-ink-inv: #fffefb;
 
-  --gm-brand: #5a52ce; /* white text 5.9:1 */
-  --gm-brand-hover: #4f47c4;
-  --gm-brand-active: #453eb2;
-  --gm-brand-text: #4a43b0; /* brand as text on surface, 6.9:1 */
-  --gm-brand-soft: #f0effd;
-  --gm-brand-soft-hover: #e6e4fc;
-  --gm-brand-on: #ffffff;
+  /* Brand is the reference's periwinkle-violet. It carries interaction only —
+     never data — which is why the orange stays available to mean "dirty". */
+  --gm-brand: #5b4fd6;
+  --gm-brand-hover: #5044c7;
+  --gm-brand-active: #453ab0;
+  --gm-brand-text: #4c40bb; /* 6.6:1 as text on surface */
+  --gm-brand-soft: #eeecfd;
+  --gm-brand-soft-hover: #e2dffb;
+  --gm-brand-on: #fffefb;
 
-  /* intensity ramp — L 0.750 / 0.658 / 0.590 / 0.522 / 0.440, monotone */
-  --gm-i1: #4fc4b4;
-  --gm-i2: #22a79a;
-  --gm-i3: #827d70;
-  --gm-i4: #94592c;
-  --gm-i5: #8b2f28;
-  --gm-i1-soft: #e7f7f4;
-  --gm-i2-soft: #ddf1ee;
-  --gm-i3-soft: #f2f1ed;
-  --gm-i4-soft: #f8eee4;
-  --gm-i5-soft: #f9eae7;
-  --gm-i1-text: #0f766e; /* 5.5:1 */
-  --gm-i3-text: #5f5b51;
-  --gm-i5-text: #8b2f28; /* 8.3:1 */
+  /* Periwinkle "sky" used by the hero. Not a data colour. */
+  --gm-sky: #7b7ae2;
+  --gm-sky-deep: #5f5cc4;
+  --gm-sky-ink: #fdf8f0;
+  /* The sun disc — decorative, and thematically the point of the whole app. */
+  --gm-sun: #f79a3e;
+  --gm-sun-deep: #ef7c22;
 
-  /* fuel slots — validated adjacent-pair CVD ΔE 9.0, normal-vision 15.4 */
+  /* Intensity ramp, re-tuned for cream surfaces. Still monotone in lightness
+     (clean lighter than dirty, so it survives greyscale and CVD) and still a
+     cool->warm rotation through a neutral middle, but warmed to sit on paper.
+     i5 lands on the reference's burnt orange, which is where "dirty" belongs. */
+  --gm-i1: #3fb9a6;
+  --gm-i2: #16a08f;
+  --gm-i3: #8a7f6a;
+  --gm-i4: #c2661f;
+  --gm-i5: #a5361b;
+  --gm-i1-soft: #e2f5f1;
+  --gm-i2-soft: #d6efea;
+  --gm-i3-soft: #f2ece0;
+  --gm-i4-soft: #fbeadb;
+  --gm-i5-soft: #f9e4dd;
+  --gm-i1-text: #0d6d63; /* 5.7:1 */
+  --gm-i3-text: #625a49;
+  --gm-i5-text: #973016; /* 6.9:1 */
+
+  /* Fuel slots keep their validated separation, warmed a touch for the cream. */
   --gm-fuel-solar: #d9a227;
   --gm-fuel-wind: #3fa46e;
   --gm-fuel-hydro: #2c74c8;
-  --gm-fuel-nuclear: #9c86e6;
+  --gm-fuel-nuclear: #8b76e0;
   --gm-fuel-storage: #b44e8c;
-  --gm-fuel-other: #96999f;
+  --gm-fuel-other: #9a938a;
   --gm-fuel-oil: #94374e;
-  --gm-fuel-gas: #db884a;
-  --gm-fuel-coal: #804c2c;
+  --gm-fuel-gas: #e08344;
+  --gm-fuel-coal: #7a4526;
 
-  --gm-good: #0f766e;
-  --gm-good-soft: #e7f7f4;
-  --gm-warn: #92620e;
-  --gm-warn-soft: #fbf1de;
-  --gm-danger: #b3261e;
-  --gm-danger-soft: #fbeae8;
-  --gm-danger-fill: #c0362c;
+  --gm-good: #0d6d63;
+  --gm-good-soft: #e2f5f1;
+  --gm-warn: #8a5c0d;
+  --gm-warn-soft: #fbf0da;
+  --gm-danger: #a9291d;
+  --gm-danger-soft: #f9e6e3;
+  --gm-danger-fill: #b83a2a;
 
-  --gm-grid: #eeeeea;
-  --gm-axis: #dcdcd7;
-  --gm-focus: #5a52ce;
+  --gm-grid: #eee5d8;
+  --gm-axis: #ddd0be;
+  --gm-focus: #5b4fd6;
 
   --gm-shadow-xs: 0 1px 1px rgba(16, 17, 20, 0.04);
   --gm-shadow-sm:
@@ -240,42 +269,51 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --gm-page: #0c0d0f;
-  --gm-surface: #17181b;
-  --gm-surface-2: #1e2024;
-  --gm-surface-3: #26282d;
-  --gm-hairline: #26282d;
-  --gm-border: #32343a;
-  --gm-border-strong: #43464d;
+  /* Warm near-black, taken from the reference's #201515 body sections. The
+     dark theme is the app's "night side" — it should feel like the same world
+     as the cream theme after sundown, not like a different product. */
+  --gm-page: #150d0d;
+  --gm-surface: #201515;
+  --gm-surface-2: #2a1d1c;
+  --gm-surface-3: #352625;
+  --gm-hairline: #33252466;
+  --gm-border: #3d2c2b;
+  --gm-border-strong: #513c3a;
 
-  --gm-ink: #f4f5f6; /* 16.3:1 */
-  --gm-ink-2: #a6a9b1; /* 7.6:1  */
-  --gm-ink-3: #8b8e96; /* 5.4:1  */
-  --gm-ink-4: #6b6e76;
-  --gm-ink-inv: #0c0d0f;
+  --gm-ink: #fdf8f0; /* 15.8:1 on --gm-surface */
+  --gm-ink-2: #c9b8b1; /* 8.9:1 */
+  --gm-ink-3: #a89791; /* 6.0:1 */
+  --gm-ink-4: #7d6c67;
+  --gm-ink-inv: #201515;
 
-  --gm-brand: #6e67dc; /* white text 4.5:1 */
-  --gm-brand-hover: #7d77e2;
-  --gm-brand-active: #8b85e8;
-  --gm-brand-text: #a9a4f0;
-  --gm-brand-soft: #21203a;
-  --gm-brand-soft-hover: #2a2947;
-  --gm-brand-on: #ffffff;
+  --gm-brand: #7d75ea;
+  --gm-brand-hover: #8c85ef;
+  --gm-brand-active: #9b94f3;
+  --gm-brand-text: #b3aef7;
+  --gm-brand-soft: #241f42;
+  --gm-brand-soft-hover: #2e2851;
+  --gm-brand-on: #150d0d;
 
-  /* intensity ramp — L 0.817 / 0.719 / 0.652 / 0.578 / 0.501 */
-  --gm-i1: #66dacb;
-  --gm-i2: #31bcab;
-  --gm-i3: #94907f;
-  --gm-i4: #a96833;
-  --gm-i5: #a63a2e;
-  --gm-i1-soft: #12302e;
-  --gm-i2-soft: #102b29;
-  --gm-i3-soft: #262521;
-  --gm-i4-soft: #2c1f13;
-  --gm-i5-soft: #2d1613;
-  --gm-i1-text: #66dacb;
-  --gm-i3-text: #b4b0a1;
-  --gm-i5-text: #e88a7c;
+  --gm-sky: #6b6ad6;
+  --gm-sky-deep: #43409b;
+  --gm-sky-ink: #fdf8f0;
+  --gm-sun: #f79a3e;
+  --gm-sun-deep: #e2761c;
+
+  /* intensity ramp — monotone in lightness against the warm-black surface */
+  --gm-i1: #5fd6c4;
+  --gm-i2: #2cbaa7;
+  --gm-i3: #a0928a;
+  --gm-i4: #d4813a;
+  --gm-i5: #d1553a;
+  --gm-i1-soft: #123230;
+  --gm-i2-soft: #102d2a;
+  --gm-i3-soft: #2b2320;
+  --gm-i4-soft: #331f11;
+  --gm-i5-soft: #331711;
+  --gm-i1-text: #5fd6c4;
+  --gm-i3-text: #c0b1a4;
+  --gm-i5-text: #f0937c;
 
   --gm-fuel-solar: #c08b26;
   --gm-fuel-wind: #3ea06b;
@@ -310,44 +348,56 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
+  /* Same values as the explicit dark theme above, indented one level. Kept
+     in sync by generation rather than by hand — they drifted before. */
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --gm-page: #0c0d0f;
-    --gm-surface: #17181b;
-    --gm-surface-2: #1e2024;
-    --gm-surface-3: #26282d;
-    --gm-hairline: #26282d;
-    --gm-border: #32343a;
-    --gm-border-strong: #43464d;
+    /* Warm near-black, taken from the reference's #201515 body sections. The
+       dark theme is the app's "night side" — it should feel like the same world
+       as the cream theme after sundown, not like a different product. */
+    --gm-page: #150d0d;
+    --gm-surface: #201515;
+    --gm-surface-2: #2a1d1c;
+    --gm-surface-3: #352625;
+    --gm-hairline: #33252466;
+    --gm-border: #3d2c2b;
+    --gm-border-strong: #513c3a;
 
-    --gm-ink: #f4f5f6;
-    --gm-ink-2: #a6a9b1;
-    --gm-ink-3: #8b8e96;
-    --gm-ink-4: #6b6e76;
-    --gm-ink-inv: #0c0d0f;
+    --gm-ink: #fdf8f0; /* 15.8:1 on --gm-surface */
+    --gm-ink-2: #c9b8b1; /* 8.9:1 */
+    --gm-ink-3: #a89791; /* 6.0:1 */
+    --gm-ink-4: #7d6c67;
+    --gm-ink-inv: #201515;
 
-    --gm-brand: #6e67dc;
-    --gm-brand-hover: #7d77e2;
-    --gm-brand-active: #8b85e8;
-    --gm-brand-text: #a9a4f0;
-    --gm-brand-soft: #21203a;
-    --gm-brand-soft-hover: #2a2947;
-    --gm-brand-on: #ffffff;
+    --gm-brand: #7d75ea;
+    --gm-brand-hover: #8c85ef;
+    --gm-brand-active: #9b94f3;
+    --gm-brand-text: #b3aef7;
+    --gm-brand-soft: #241f42;
+    --gm-brand-soft-hover: #2e2851;
+    --gm-brand-on: #150d0d;
 
-    --gm-i1: #66dacb;
-    --gm-i2: #31bcab;
-    --gm-i3: #94907f;
-    --gm-i4: #a96833;
-    --gm-i5: #a63a2e;
-    --gm-i1-soft: #12302e;
-    --gm-i2-soft: #102b29;
-    --gm-i3-soft: #262521;
-    --gm-i4-soft: #2c1f13;
-    --gm-i5-soft: #2d1613;
-    --gm-i1-text: #66dacb;
-    --gm-i3-text: #b4b0a1;
-    --gm-i5-text: #e88a7c;
+    --gm-sky: #6b6ad6;
+    --gm-sky-deep: #43409b;
+    --gm-sky-ink: #fdf8f0;
+    --gm-sun: #f79a3e;
+    --gm-sun-deep: #e2761c;
+
+    /* intensity ramp — monotone in lightness against the warm-black surface */
+    --gm-i1: #5fd6c4;
+    --gm-i2: #2cbaa7;
+    --gm-i3: #a0928a;
+    --gm-i4: #d4813a;
+    --gm-i5: #d1553a;
+    --gm-i1-soft: #123230;
+    --gm-i2-soft: #102d2a;
+    --gm-i3-soft: #2b2320;
+    --gm-i4-soft: #331f11;
+    --gm-i5-soft: #331711;
+    --gm-i1-text: #5fd6c4;
+    --gm-i3-text: #c0b1a4;
+    --gm-i5-text: #f0937c;
 
     --gm-fuel-solar: #c08b26;
     --gm-fuel-wind: #3ea06b;
