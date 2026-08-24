@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Car, Leaf, Smartphone, Trash2, TreePine } from "lucide-react";
+import { Car, Leaf, Plus, Smartphone, Trash2 } from "lucide-react";
 import { ImpactSparkline } from "@/components/charts/ImpactSparkline";
 import { StorageNotice } from "@/components/auth/StorageNotice";
 import { Badge } from "@/components/ui/Badge";
@@ -18,6 +18,7 @@ import { cheerFor } from "@/lib/copy";
 import { formatDayLabel, formatGrams, formatGramsLong } from "@/lib/format";
 import { useTracker } from "@/lib/track/useTracker";
 import { useGrid } from "./useGrid";
+import { WeeklySummary } from "./WeeklySummary";
 
 export function ImpactView() {
   const grid = useGrid();
@@ -86,12 +87,9 @@ export function ImpactView() {
                   size="hero"
                   tone="clean"
                 />
-                <Stat
-                  label="This week"
-                  value={formatGrams(summary.weekGramsSaved)}
-                  sub={`${summary.weekActionCount} logged`}
-                  size="md"
-                />
+                {/* "This week" lives one card down, in <WeeklySummary>, with the
+                    full breakdown — repeating the bare number here just made the
+                    same figure show up twice in the first screenful. */}
                 {summary.streakDays > 0 ? (
                   <Stat
                     label="Streak"
@@ -103,9 +101,6 @@ export function ImpactView() {
               </div>
 
               <div>
-                <p className="mb-2 text-sm font-medium">
-                  {report.message}
-                </p>
                 {weekly.length > 1 ? (
                   <ImpactSparkline
                     points={weekly.map((w) => ({
@@ -126,12 +121,18 @@ export function ImpactView() {
             </CardBody>
           </Card>
 
+          <WeeklySummary report={report} />
+
           <Card>
             <CardHeader>
               <CardTitle>What that actually means</CardTitle>
             </CardHeader>
             <CardBody>
-              <ul className="grid gap-4 sm:grid-cols-3">
+              {/* Two equivalences, not three. "Tree-days" was a unit we invented
+                  for the occasion — miles and phone charges are things people
+                  already have an intuition for, and a third, fuzzier one didn't
+                  add clarity, just more to read. */}
+              <ul className="grid gap-4 sm:grid-cols-2">
                 <Equivalent
                   icon={<Car className="size-4" />}
                   value={summary.equivalents.milesDriven}
@@ -144,18 +145,11 @@ export function ImpactView() {
                   unit="phone charges"
                   label="worth of power"
                 />
-                <Equivalent
-                  icon={<TreePine className="size-4" />}
-                  value={summary.equivalents.treeDays}
-                  unit={summary.equivalents.treeDays === 1 ? "tree-day" : "tree-days"}
-                  label="of absorption"
-                />
               </ul>
               <p className="mt-4 text-xs text-ink-3">
                 Using 400 g of CO₂ per mile driven (EPA average passenger
-                vehicle), 8 g per phone charge, and 58 g absorbed per day by one
-                mature tree. That&apos;s {formatGramsLong(summary.totalGramsSaved)}{" "}
-                in total.
+                vehicle) and 8 g per phone charge. That&apos;s{" "}
+                {formatGramsLong(summary.totalGramsSaved)} in total.
               </p>
             </CardBody>
           </Card>
@@ -210,9 +204,11 @@ export function ImpactView() {
           Log an everyday win
         </h2>
         <p className="mt-0.5 mb-3 text-sm text-ink-3">
-          Not everything is about timing. These are loads you simply didn&apos;t
-          run — valued at your grid&apos;s average of{" "}
-          {Math.round(averageIntensity)} g/kWh.
+          Tap one as soon as it happens. These aren&apos;t about timing like an
+          appliance shift is, so there&apos;s no clean hour to compare
+          against — just power you simply didn&apos;t use. That&apos;s why
+          they&apos;re valued at a flat rate instead of a calculated one: your
+          grid&apos;s average of {Math.round(averageIntensity)} g/kWh.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {HABITS.map((habit) => (
@@ -235,17 +231,21 @@ export function ImpactView() {
                     : habit.detail,
                 );
               }}
-              className="flex items-start gap-3 rounded-xl border border-hairline bg-surface p-3 text-left transition-colors hover:bg-surface-2"
+              className="flex items-start gap-3 rounded-xl border border-hairline bg-surface p-3 text-left transition-colors hover:bg-surface-2 active:bg-surface-2"
             >
               <span aria-hidden className="text-lg leading-none">
                 {habit.emoji}
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{habit.label}</span>
                 <span className="mt-0.5 block text-xs text-ink-3">
                   {habit.detail}
                 </span>
               </span>
+              <Plus
+                aria-hidden
+                className="mt-0.5 size-4 shrink-0 text-ink-4"
+              />
             </button>
           ))}
         </div>
