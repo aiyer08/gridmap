@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "./cn";
+import { Eyebrow } from "./Eyebrow";
 
 export interface StatDelta {
   /** Signed change. Sign carries the direction; `goodDirection` carries meaning. */
@@ -39,6 +40,15 @@ const VALUE_SIZES = {
   hero: "text-5xl sm:text-6xl",
 } as const;
 
+/**
+ * `sm`/`md` stay on the geometric sans: they're compact companion figures
+ * (a streak count, "this week") read at a glance next to other numbers.
+ * `lg`/`hero` are the standalone payoff figures — "CO₂ avoided, all time" —
+ * which the app only ever shows one at a time, so the editorial serif's
+ * proportional (non-tabular) digits read as a headline rather than data.
+ */
+const SERIF_SIZES = new Set(["lg", "hero"]);
+
 const TONES = {
   default: "text-ink",
   clean: "text-i1-text",
@@ -68,7 +78,7 @@ export function Stat({
         className,
       )}
     >
-      <div className="text-xs font-medium text-ink-3">{label}</div>
+      <Eyebrow as="span">{label}</Eyebrow>
 
       <div
         className={cn(
@@ -80,12 +90,11 @@ export function Stat({
         {/* Proportional figures: tabular-nums makes display numbers look loose. */}
         <span
           className={cn(
-            "font-semibold",
             VALUE_SIZES[size],
             TONES[tone],
-            size === "hero" || size === "lg"
-              ? "tracking-[-0.028em]"
-              : "tracking-[-0.02em]",
+            SERIF_SIZES.has(size)
+              ? "font-display font-normal tracking-[-0.01em]"
+              : "font-semibold tracking-[-0.02em]",
           )}
         >
           {value}

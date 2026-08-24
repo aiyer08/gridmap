@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check, ChevronDown } from "lucide-react";
-import { cn, focusRing } from "./cn";
+import { cn, EDITORIAL_EASE, focusRing } from "./cn";
 
 export interface SelectOption<T extends string> {
   value: T;
@@ -193,9 +193,9 @@ export function Select<T extends string>({
         onClick={() => (open ? close() : openList())}
         onKeyDown={onKeyDown}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg border bg-surface text-left",
+          "flex w-full items-center gap-2.5 rounded-md border bg-surface text-left",
           "transition-[border-color,background-color,box-shadow]",
-          "duration-[var(--gm-dur-1)] ease-(--ease-out-soft)",
+          "duration-[var(--gm-dur-2)] ease-editorial",
           "hover:border-border-strong hover:bg-surface-2/60",
           "disabled:pointer-events-none disabled:opacity-45",
           open ? "border-brand" : "border-border",
@@ -243,7 +243,7 @@ export function Select<T extends string>({
           aria-hidden="true"
           className={cn(
             "size-4 shrink-0 text-ink-3 transition-transform",
-            "duration-[var(--gm-dur-2)] ease-(--ease-out-soft)",
+            "duration-[var(--gm-dur-2)] ease-editorial",
             open && "rotate-180",
           )}
         />
@@ -255,10 +255,10 @@ export function Select<T extends string>({
             initial={reduce ? { opacity: 1 } : { opacity: 0, y: dropUp ? 4 : -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: dropUp ? 4 : -4 }}
-            transition={{ duration: reduce ? 0 : 0.14, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reduce ? 0 : 0.18, ease: EDITORIAL_EASE }}
             className={cn(
-              "absolute z-50 w-full min-w-56 overflow-hidden rounded-xl",
-              "border border-hairline bg-surface shadow-lg",
+              "absolute z-50 w-full min-w-56 overflow-hidden rounded-lg",
+              "border border-hairline bg-surface shadow-md",
               dropUp ? "bottom-full mb-1.5" : "top-full mt-1.5",
             )}
           >
@@ -285,8 +285,8 @@ export function Select<T extends string>({
                     onPointerEnter={() => !opt.disabled && setActiveIndex(i)}
                     onClick={() => commit(i)}
                     className={cn(
-                      "flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2",
-                      "transition-colors duration-[var(--gm-dur-1)]",
+                      "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2",
+                      "transition-colors duration-[var(--gm-dur-1)] ease-editorial",
                       opt.disabled && "pointer-events-none opacity-40",
                       isActive && "bg-surface-2",
                     )}

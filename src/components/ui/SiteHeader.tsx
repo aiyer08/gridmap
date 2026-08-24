@@ -42,7 +42,8 @@ export function SiteHeader({ nav = DEFAULT_NAV, className }: SiteHeaderProps) {
           href="/"
           aria-label="GridMap — home"
           className={cn(
-            "-mx-1 rounded-lg px-1 py-1 transition-opacity hover:opacity-80",
+            "-mx-1 rounded-md px-1 py-1 transition-opacity",
+            "duration-[var(--gm-dur-2)] ease-editorial hover:opacity-80",
             focusRing,
           )}
         >
@@ -62,8 +63,8 @@ export function SiteHeader({ nav = DEFAULT_NAV, className }: SiteHeaderProps) {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative block truncate rounded-lg px-2 py-1.5 text-xs font-medium sm:px-2.5 sm:text-sm",
-                      "transition-colors duration-[var(--gm-dur-1)]",
+                      "relative block truncate rounded-md px-2 py-1.5 text-xs font-semibold tracking-[0.005em] sm:px-2.5 sm:text-sm",
+                      "transition-colors duration-[var(--gm-dur-2)] ease-editorial",
                       active
                         ? "text-ink"
                         : "text-ink-3 hover:bg-surface-2 hover:text-ink",
@@ -119,7 +120,11 @@ export function SiteFooter({ className }: SiteFooterProps) {
                 href="https://www.eia.gov/opendata/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className={cn("rounded hover:text-ink hover:underline", focusRing)}
+                className={cn(
+                  "rounded transition-colors duration-[var(--gm-dur-2)] ease-editorial",
+                  "hover:text-ink hover:underline",
+                  focusRing,
+                )}
               >
                 EIA Open Data
               </a>
@@ -129,7 +134,11 @@ export function SiteFooter({ className }: SiteFooterProps) {
                 href="https://www.electricitymaps.com/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className={cn("rounded hover:text-ink hover:underline", focusRing)}
+                className={cn(
+                  "rounded transition-colors duration-[var(--gm-dur-2)] ease-editorial",
+                  "hover:text-ink hover:underline",
+                  focusRing,
+                )}
               >
                 Electricity Maps
               </a>
@@ -139,7 +148,11 @@ export function SiteFooter({ className }: SiteFooterProps) {
                 href="https://www.watttime.org/"
                 target="_blank"
                 rel="noreferrer noopener"
-                className={cn("rounded hover:text-ink hover:underline", focusRing)}
+                className={cn(
+                  "rounded transition-colors duration-[var(--gm-dur-2)] ease-editorial",
+                  "hover:text-ink hover:underline",
+                  focusRing,
+                )}
               >
                 WattTime
               </a>

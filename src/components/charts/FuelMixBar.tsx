@@ -4,6 +4,7 @@ import * as React from "react";
 import { FUEL_LABELS } from "@/lib/emissions";
 import type { FuelMix, FuelType } from "@/lib/types";
 import { cn, focusRingTight } from "@/components/ui/cn";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FUEL_COLORS, FUEL_ORDER } from "./chartUtils";
 
 export interface FuelMixBarProps {
@@ -153,10 +154,10 @@ export function FuelMixBar({
               transform: "translateX(-50%)",
             }}
           >
-            <span className="text-sm font-semibold text-ink tabular-nums">
+            <span className="font-mono text-sm font-semibold text-ink tabular-nums">
               {Math.round(activeSegment.share * 100)}%
             </span>{" "}
-            <span className="text-2xs text-ink-3">{activeSegment.label}</span>
+            <Eyebrow as="span">{activeSegment.label}</Eyebrow>
           </div>
         ) : null}
       </div>
@@ -186,7 +187,7 @@ export function FuelMixBar({
                     style={{ backgroundColor: s.color }}
                   />
                   <span className="text-ink-2">{s.label}</span>
-                  <span className="font-semibold text-ink tabular-nums">
+                  <span className="font-mono font-semibold text-ink tabular-nums">
                     {Math.round(s.share * 100)}%
                   </span>
                 </button>

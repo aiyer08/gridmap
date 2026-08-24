@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { cn, focusRing } from "./cn";
+import { cn, EDITORIAL_EASE, focusRing } from "./cn";
 
 export interface SegmentedOption<T extends string> {
   value: T;
@@ -92,9 +92,7 @@ export function SegmentedControl<T extends string>({
         style={{ width: `calc((100% - 4px) / ${options.length})` }}
         animate={{ x: `${activeIndex * 100}%` }}
         transition={
-          reduce
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 520, damping: 38, mass: 0.8 }
+          reduce ? { duration: 0 } : { duration: 0.28, ease: EDITORIAL_EASE }
         }
       />
       {options.map((opt, i) => {
@@ -114,7 +112,7 @@ export function SegmentedControl<T extends string>({
             className={cn(
               "relative z-10 inline-flex min-w-0 items-center justify-center gap-1.5",
               "rounded-[6px] font-medium transition-colors",
-              "duration-[var(--gm-dur-1)] ease-(--ease-out-soft)",
+              "duration-[var(--gm-dur-2)] ease-editorial",
               "disabled:pointer-events-none disabled:opacity-40",
               size === "sm"
                 ? "h-7 px-2 text-2xs [&_svg]:size-3.5"

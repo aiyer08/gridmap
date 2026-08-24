@@ -42,3 +42,13 @@ export const focusRing =
 /** Focus treatment for marks drawn inside a chart (tighter offset). */
 export const focusRingTight =
   "outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus";
+
+/**
+ * The reference's own easing curve as a Framer Motion cubic-bezier array —
+ * `var(--ease-editorial)` (`cubic-bezier(0.44, 0, 0.56, 1)`) can't be read by
+ * Framer's `transition.ease`, which wants numbers, not a CSS custom property.
+ * Reserved for reveals/hand-offs (sheets, dropdowns, tooltips, toasts) in the
+ * 0.15–0.4s band; snappier spring physics elsewhere (e.g. a dragged sheet)
+ * stay springs.
+ */
+export const EDITORIAL_EASE: [number, number, number, number] = [0.44, 0, 0.56, 1];

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CheckCircle2, Info, Sparkles, TriangleAlert, X } from "lucide-react";
-import { cn, focusRing } from "./cn";
+import { cn, EDITORIAL_EASE, focusRing } from "./cn";
 
 export type ToastTone = "default" | "success" | "info" | "warn" | "error";
 
@@ -163,15 +163,18 @@ function ToastViewport({
               exit={
                 reduce
                   ? { opacity: 0 }
-                  : { opacity: 0, y: 8, scale: 0.97, transition: { duration: 0.15 } }
+                  : {
+                      opacity: 0,
+                      y: 8,
+                      scale: 0.97,
+                      transition: { duration: 0.18, ease: EDITORIAL_EASE },
+                    }
               }
               transition={
-                reduce
-                  ? { duration: 0 }
-                  : { type: "spring", stiffness: 460, damping: 34, mass: 0.7 }
+                reduce ? { duration: 0 } : { duration: 0.28, ease: EDITORIAL_EASE }
               }
               className={cn(
-                "pointer-events-auto flex items-start gap-3 rounded-xl border bg-surface p-3 shadow-lg",
+                "pointer-events-auto flex items-start gap-3 rounded-lg border bg-surface p-3 shadow-md",
                 styles.ring,
               )}
             >
@@ -198,6 +201,7 @@ function ToastViewport({
                     }}
                     className={cn(
                       "mt-2 rounded-md text-xs font-semibold text-brand-text",
+                      "transition-colors duration-[var(--gm-dur-2)] ease-editorial",
                       "hover:underline",
                       focusRing,
                     )}
@@ -212,7 +216,8 @@ function ToastViewport({
                 aria-label="Dismiss"
                 className={cn(
                   "-m-1 grid size-7 shrink-0 place-items-center rounded-md text-ink-4",
-                  "transition-colors hover:bg-surface-2 hover:text-ink-2",
+                  "transition-colors duration-[var(--gm-dur-2)] ease-editorial",
+                  "hover:bg-surface-2 hover:text-ink-2",
                   focusRing,
                 )}
               >

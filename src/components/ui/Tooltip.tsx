@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { cn, focusRing } from "./cn";
+import { cn, EDITORIAL_EASE, focusRing } from "./cn";
 
 export type TooltipSide = "top" | "bottom" | "left" | "right";
 
@@ -136,12 +136,12 @@ export function Tooltip({
             initial={reduce ? { opacity: 1 } : { opacity: 0, ...offset }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, ...offset }}
-            transition={{ duration: reduce ? 0 : 0.14, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reduce ? 0 : 0.16, ease: EDITORIAL_EASE }}
             style={{ maxWidth }}
             className={cn(
               "pointer-events-none absolute z-50 w-max",
-              "rounded-lg border border-hairline bg-surface px-2.5 py-1.5",
-              "text-xs leading-snug font-normal text-ink-2 shadow-lg",
+              "rounded-md border border-hairline bg-surface px-2.5 py-1.5",
+              "text-xs leading-snug font-normal text-ink-2 shadow-md",
               placement[resolved],
               bubbleClassName,
             )}
@@ -184,7 +184,7 @@ export function InfoDot({
         aria-label={label}
         className={cn(
           "grid shrink-0 place-items-center rounded-full text-ink-4",
-          "transition-colors duration-[var(--gm-dur-1)]",
+          "transition-colors duration-[var(--gm-dur-2)] ease-editorial",
           "hover:bg-surface-2 hover:text-ink-2",
           size === "sm" ? "size-5" : "size-6",
           focusRing,

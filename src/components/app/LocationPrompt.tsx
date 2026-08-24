@@ -26,7 +26,12 @@ export function LocationPrompt({
   const valid = zip.length === 5;
 
   return (
-    <Card className={cn("mx-auto max-w-xl", className)}>
+    <Card
+      className={cn(
+        "mx-auto max-w-xl rounded-3xl shadow-xl",
+        className,
+      )}
+    >
       <CardBody className="py-8 text-center sm:py-10">
         <span
           className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand-text"
@@ -34,7 +39,7 @@ export function LocationPrompt({
         >
           <MapPin className="size-5" />
         </span>
-        <h2 className="mt-4 text-xl font-semibold tracking-tight">
+        <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl tracking-tight sm:text-3xl">
           Where do you pay your electricity bill?
         </h2>
         <p className="mx-auto mt-2 max-w-md text-pretty text-sm leading-relaxed text-ink-3">

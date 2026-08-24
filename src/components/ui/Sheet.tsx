@@ -4,7 +4,7 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
-import { cn, focusRing } from "./cn";
+import { cn, EDITORIAL_EASE, focusRing } from "./cn";
 import { useHydrated } from "./useHydrated";
 
 const FOCUSABLE =
@@ -135,7 +135,7 @@ export function Sheet({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.18 }}
+            transition={{ duration: reduce ? 0 : 0.2, ease: EDITORIAL_EASE }}
             className="absolute inset-0 bg-ink/35 backdrop-blur-[2px]"
           />
           <motion.div
@@ -161,14 +161,12 @@ export function Sheet({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985 }}
             transition={
-              reduce
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 480, damping: 38, mass: 0.8 }
+              reduce ? { duration: 0 } : { duration: 0.32, ease: EDITORIAL_EASE }
             }
             className={cn(
               "relative flex max-h-[92dvh] w-full flex-col overflow-hidden",
-              "border border-hairline bg-surface shadow-xl",
-              "rounded-t-2xl sm:rounded-2xl",
+              "border border-hairline bg-surface shadow-lg",
+              "rounded-t-xl sm:rounded-xl",
               widths[size],
               className,
             )}
@@ -187,7 +185,7 @@ export function Sheet({
                   {title ? (
                     <h2
                       id={`${id}-title`}
-                      className="text-base font-semibold tracking-[-0.014em] text-ink"
+                      className="font-display text-xl leading-tight tracking-[-0.008em] text-ink"
                     >
                       {title}
                     </h2>
@@ -204,8 +202,9 @@ export function Sheet({
                     onClick={onClose}
                     aria-label="Close"
                     className={cn(
-                      "-mt-0.5 -mr-1 grid size-8 shrink-0 place-items-center rounded-lg",
-                      "text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink",
+                      "-mt-0.5 -mr-1 grid size-8 shrink-0 place-items-center rounded-md",
+                      "text-ink-3 transition-colors duration-[var(--gm-dur-2)] ease-editorial",
+                      "hover:bg-surface-2 hover:text-ink",
                       focusRing,
                     )}
                   >

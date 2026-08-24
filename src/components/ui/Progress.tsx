@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { cn } from "./cn";
+import { cn, EDITORIAL_EASE } from "./cn";
 
 export type ProgressTone = "accent" | "clean" | "neutral";
 
@@ -91,11 +91,7 @@ export function ProgressBar({
           className={cn("h-full rounded-full", FILL[tone])}
           initial={reduce ? { width: `${pct}%` } : { width: 0 }}
           animate={{ width: `${pct}%` }}
-          transition={
-            reduce
-              ? { duration: 0 }
-              : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
-          }
+          transition={reduce ? { duration: 0 } : { duration: 0.4, ease: EDITORIAL_EASE }}
         />
       </div>
     </div>
@@ -171,9 +167,7 @@ export function ProgressRing({
           className={STROKE[tone]}
           initial={reduce ? { strokeDashoffset: c * (1 - pct) } : { strokeDashoffset: c }}
           animate={{ strokeDashoffset: c * (1 - pct) }}
-          transition={
-            reduce ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
-          }
+          transition={reduce ? { duration: 0 } : { duration: 0.4, ease: EDITORIAL_EASE }}
         />
       </svg>
       {centerLabel || centerSub ? (

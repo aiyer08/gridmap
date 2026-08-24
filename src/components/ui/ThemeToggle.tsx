@@ -83,7 +83,7 @@ export function ThemeToggle({
             onClick={() => set(c)}
             className={cn(
               "grid place-items-center rounded-[6px] transition-colors",
-              "duration-[var(--gm-dur-1)]",
+              "duration-[var(--gm-dur-2)] ease-editorial",
               size === "sm" ? "size-7 [&_svg]:size-3.5" : "size-8 [&_svg]:size-4",
               ready && choice === c
                 ? "border border-hairline bg-surface text-ink shadow-xs"
@@ -107,8 +107,8 @@ export function ThemeToggle({
         onClick={() => set(next)}
         aria-label={`Colour theme: ${META[choice].label}. Switch to ${META[next].label}.`}
         className={cn(
-          "grid place-items-center rounded-lg border border-transparent text-ink-3",
-          "transition-colors duration-[var(--gm-dur-1)]",
+          "grid place-items-center rounded-md border border-transparent text-ink-3",
+          "transition-colors duration-[var(--gm-dur-2)] ease-editorial",
           "hover:border-hairline hover:bg-surface-2 hover:text-ink",
           dims,
           focusRing,

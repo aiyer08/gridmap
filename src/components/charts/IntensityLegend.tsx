@@ -29,7 +29,9 @@ export function IntensityLegend({
       )}
     >
       <div className="flex items-center gap-1.5">
-        <span className="text-ink-3">Cleanest</span>
+        <span className="font-semibold text-ink-3 uppercase tracking-[0.1em]">
+          Cleanest
+        </span>
         <span
           className="flex overflow-hidden rounded-full"
           role="img"
@@ -43,7 +45,9 @@ export function IntensityLegend({
             />
           ))}
         </span>
-        <span className="text-ink-3">Highest</span>
+        <span className="font-semibold text-ink-3 uppercase tracking-[0.1em]">
+          Highest
+        </span>
       </div>
 
       {showWindowKey ? (
@@ -55,7 +59,9 @@ export function IntensityLegend({
               size === "sm" ? "h-2.5 w-4" : "h-3 w-5",
             )}
           />
-          <span>Suggested window</span>
+          <span className="font-semibold uppercase tracking-[0.1em]">
+            Suggested window
+          </span>
         </div>
       ) : null}
     </div>

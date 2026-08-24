@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { IntensityPoint, RunWindow } from "@/lib/types";
 import { cn, focusRing } from "@/components/ui/cn";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { useChartWidth } from "./useChartWidth";
 import { IntensityLegend } from "./IntensityLegend";
 import {
@@ -277,6 +278,10 @@ export function CarbonRibbon({
                 />
               ))}
             </linearGradient>
+            {/* Luminance mask, not a themed colour: on an SVG <mask> the stop's
+                own hue is irrelevant, only its luminance × opacity sets how
+                much of the ribbon shows through, so this stays literal white
+                in both themes rather than switching to an ink token. */}
             <linearGradient
               id={`fade-${uid}`}
               gradientUnits="userSpaceOnUse"
@@ -332,13 +337,13 @@ export function CarbonRibbon({
                   )}
                   onClick={onSelectWindow ? () => onSelectWindow(w) : undefined}
                 />
-                {bw > 44 ? (
+                {bw > 52 ? (
                   <text
                     x={x1 + bw / 2}
                     y={pad.top - 9}
                     textAnchor="middle"
                     className={cn(
-                      "text-[10px] font-semibold",
+                      "text-[10px] font-semibold uppercase tracking-[0.1em]",
                       best ? "fill-brand" : "fill-ink-3",
                     )}
                   >
@@ -365,7 +370,7 @@ export function CarbonRibbon({
                 x={pad.left - 6}
                 y={y(t) + 3.5}
                 textAnchor="end"
-                className="fill-ink-3 text-[10px] tabular-nums"
+                className="fill-ink-3 font-mono text-[10px] tabular-nums"
               >
                 {t}
               </text>
@@ -413,7 +418,7 @@ export function CarbonRibbon({
                 x={clamp(x(nowIdx), pad.left + 12, pad.left + plotW - 12)}
                 y={svgH - 8}
                 textAnchor="middle"
-                className="fill-ink-2 text-[10px] font-semibold"
+                className="fill-ink-2 text-[10px] font-semibold uppercase tracking-[0.1em]"
               >
                 Now
               </text>
@@ -477,11 +482,11 @@ export function CarbonRibbon({
                   : "translate(-50%, -100%)",
             }}
           >
-            <div className="text-2xs text-ink-3">
+            <Eyebrow as="div">
               {formatDayHour(activePoint.ts, now, timeZone)}
-            </div>
+            </Eyebrow>
             <div className="mt-0.5 flex items-baseline gap-1">
-              <span className="text-sm font-semibold text-ink tabular-nums">
+              <span className="font-mono text-sm font-semibold text-ink tabular-nums">
                 {formatIntensity(activePoint.gCO2PerKWh)}
               </span>
               <span className="text-2xs text-ink-3">g CO₂/kWh</span>

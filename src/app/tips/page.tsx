@@ -22,7 +22,7 @@ export default function TipsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6">
       <header className="pt-8 pb-6 sm:pt-12">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight sm:text-5xl">
           Tips &amp; how it works
         </h1>
         <p className="mt-2 max-w-xl text-pretty text-ink-3">
@@ -68,7 +68,7 @@ export default function TipsPage() {
       >
         <h2
           id="how-heading"
-          className="text-xl font-semibold tracking-tight"
+          className="font-[family-name:var(--font-display)] text-2xl tracking-tight sm:text-3xl"
         >
           How it works
         </h2>
@@ -89,7 +89,7 @@ export default function TipsPage() {
       <section aria-labelledby="factors-heading" className="mt-12">
         <h2
           id="factors-heading"
-          className="text-xl font-semibold tracking-tight"
+          className="font-[family-name:var(--font-display)] text-2xl tracking-tight sm:text-3xl"
         >
           The numbers behind the numbers
         </h2>
@@ -160,7 +160,7 @@ export default function TipsPage() {
       <section aria-labelledby="appliances-heading" className="mt-12">
         <h2
           id="appliances-heading"
-          className="text-xl font-semibold tracking-tight"
+          className="font-[family-name:var(--font-display)] text-2xl tracking-tight sm:text-3xl"
         >
           What we assume your appliances use
         </h2>

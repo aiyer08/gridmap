@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn, focusRing } from "@/components/ui/cn";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { useChartWidth } from "./useChartWidth";
 import { clamp, formatGrams, smoothPath } from "./chartUtils";
 
@@ -44,7 +45,6 @@ export function ImpactSparkline({
   unitName = "grams of CO₂ avoided",
   className,
 }: ImpactSparklineProps) {
-  const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
   const [ref, width] = useChartWidth<HTMLDivElement>(320);
   const [active, setActive] = React.useState<number | null>(null);
 
@@ -125,22 +125,6 @@ export function ImpactSparkline({
           aria-label={summary}
           className="block overflow-visible"
         >
-          {variant === "line" ? (
-            <defs>
-              <linearGradient
-                id={`spark-${uid}`}
-                gradientUnits="userSpaceOnUse"
-                x1="0"
-                y1={pad.top}
-                x2="0"
-                y2={baseY}
-              >
-                <stop offset="0" stopColor="var(--gm-brand)" stopOpacity="0.16" />
-                <stop offset="1" stopColor="var(--gm-brand)" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          ) : null}
-
           {/* Baseline hairline */}
           <line
             x1={pad.left}
@@ -198,9 +182,11 @@ export function ImpactSparkline({
                     width={barW}
                     height={h}
                     rx={Math.min(4, barW / 2)}
-                    fill={
-                      isEmphasis ? "var(--gm-brand)" : "var(--gm-border-strong)"
-                    }
+                    /* border-strong is a UI-chrome token (1.9:1 / 1.7:1 vs the
+                       cream/warm-black surfaces) — too faint for a data bar.
+                       ink-3 is the app's own "de-emphasis" role, already used
+                       for muted axis text, and clears 5:1+ in both themes. */
+                    fill={isEmphasis ? "var(--gm-brand)" : "var(--gm-ink-3)"}
                     opacity={
                       active !== null && !isActive && !isEmphasis ? 0.6 : 1
                     }
@@ -211,9 +197,14 @@ export function ImpactSparkline({
             })
           ) : (
             <>
+              {/* Flat, low-opacity fill rather than a fade-to-transparent
+                  gradient — the editorial theme favours flat colour fields,
+                  and a single trend line doesn't need a soft glow under it
+                  to read as an area. */}
               <path
                 d={`${smoothPath(points.map((p, i) => ({ x: pointX(i), y: y(p.value) })))} L ${pointX(n - 1)} ${baseY} L ${pointX(0)} ${baseY} Z`}
-                fill={`url(#spark-${uid})`}
+                fill="var(--gm-brand)"
+                fillOpacity="0.1"
               />
               <path
                 d={smoothPath(points.map((p, i) => ({ x: pointX(i), y: y(p.value) })))}
@@ -309,10 +300,10 @@ export function ImpactSparkline({
               transform: "translate(-50%, -100%)",
             }}
           >
-            <span className="text-sm font-semibold text-ink tabular-nums">
+            <span className="font-mono text-sm font-semibold text-ink tabular-nums">
               {format(activePoint.value)}
             </span>{" "}
-            <span className="text-2xs text-ink-3">{activePoint.label}</span>
+            <Eyebrow as="span">{activePoint.label}</Eyebrow>
           </div>
         ) : null}
       </div>

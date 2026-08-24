@@ -21,8 +21,9 @@ export interface ButtonProps
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
+  // Flat fill, no shadow — a printed rectangle of colour, not a raised chip.
   primary:
-    "bg-brand text-brand-on border border-transparent shadow-xs " +
+    "bg-brand text-brand-on border border-transparent " +
     "hover:bg-brand-hover active:bg-brand-active",
   secondary:
     "bg-surface text-ink border border-border shadow-xs " +
@@ -36,10 +37,12 @@ const VARIANTS: Record<ButtonVariant, string> = {
     "hover:bg-danger-soft hover:text-danger active:bg-danger-soft",
 };
 
+// Flatter and more rectangular than the old lg/xl scale — a modest ~6-8px,
+// never a pill.
 const SIZES: Record<ButtonSize, string> = {
-  sm: "h-8 gap-1.5 px-2.5 text-xs rounded-md",
-  md: "h-10 gap-2 px-3.5 text-sm rounded-lg",
-  lg: "h-12 gap-2 px-5 text-base rounded-xl",
+  sm: "h-8 gap-1.5 px-2.5 text-xs rounded-sm",
+  md: "h-10 gap-2 px-3.5 text-sm rounded-md",
+  lg: "h-12 gap-2 px-5 text-base rounded-md",
 };
 
 const ICON_SIZES: Record<ButtonSize, string> = {
@@ -71,10 +74,10 @@ export function Button({
       aria-busy={loading || undefined}
       data-loading={loading ? "" : undefined}
       className={cn(
-        "relative inline-flex select-none items-center justify-center",
+        "group relative inline-flex select-none items-center justify-center",
         "font-medium tracking-[-0.005em] whitespace-nowrap",
         "transition-[background-color,border-color,color,box-shadow,transform]",
-        "duration-[var(--gm-dur-1)] ease-(--ease-out-soft)",
+        "duration-[var(--gm-dur-2)] ease-editorial",
         "active:scale-[0.985] disabled:pointer-events-none disabled:opacity-45",
         "disabled:active:scale-100",
         focusRing,
@@ -105,7 +108,14 @@ export function Button({
         ) : null}
         {children}
         {iconRight ? (
-          <span className="shrink-0 opacity-90" aria-hidden="true">
+          <span
+            className={cn(
+              "shrink-0 opacity-90 transition-transform",
+              "duration-[var(--gm-dur-2)] ease-editorial",
+              "group-hover:translate-x-0.5",
+            )}
+            aria-hidden="true"
+          >
             {iconRight}
           </span>
         ) : null}

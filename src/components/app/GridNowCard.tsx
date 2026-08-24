@@ -60,7 +60,7 @@ export function GridNowCard({
             <Icon className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-balance text-xl font-semibold tracking-tight sm:text-2xl">
+            <h2 className="font-[family-name:var(--font-display)] text-balance text-2xl tracking-tight sm:text-3xl">
               {verdict.headline}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-ink-3">

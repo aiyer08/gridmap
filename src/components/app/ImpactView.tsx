@@ -49,7 +49,7 @@ export function ImpactView() {
       <Celebrate runKey={burst || null} mode="overlay" count={22} />
 
       <header className="pt-8 pb-6 sm:pt-12">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight sm:text-5xl">
           Your impact
         </h1>
         <p className="mt-2 max-w-xl text-pretty text-ink-3">
@@ -155,7 +155,7 @@ export function ImpactView() {
           </Card>
 
           <section aria-labelledby="history-heading">
-            <h2 id="history-heading" className="text-lg font-semibold tracking-tight">
+            <h2 id="history-heading" className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
               Everything you&apos;ve logged
             </h2>
             <Card bleed className="mt-3">
@@ -200,7 +200,7 @@ export function ImpactView() {
       )}
 
       <section aria-labelledby="habits-heading" className="mt-10">
-        <h2 id="habits-heading" className="text-lg font-semibold tracking-tight">
+        <h2 id="habits-heading" className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
           Log an everyday win
         </h2>
         <p className="mt-0.5 mb-3 text-sm text-ink-3">

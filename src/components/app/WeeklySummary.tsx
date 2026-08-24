@@ -57,7 +57,7 @@ export function WeeklySummary({
     <Card className={className}>
       <CardBody className="space-y-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">This week</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-tight">This week</h2>
           <p className="font-mono text-xs text-ink-3">
             {weekRangeLabel(report.weekStart, report.weekEnd)}
           </p>

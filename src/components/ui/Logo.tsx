@@ -20,10 +20,10 @@ export function LogoMark({ size = 24, className, ...rest }: LogoMarkProps) {
       className={cn("shrink-0", className)}
       {...rest}
     >
-      <rect x="1.5" y="12.5" width="4" height="9" rx="2" fill="var(--gm-i1)" />
-      <rect x="7.5" y="7" width="4" height="14.5" rx="2" fill="var(--gm-i2)" />
-      <rect x="13.5" y="10" width="4" height="11.5" rx="2" fill="var(--gm-i4)" />
-      <rect x="19.5" y="2.5" width="4" height="19" rx="2" fill="var(--gm-i5)" />
+      <rect x="1.5" y="12.5" width="4" height="9" rx="1" fill="var(--gm-i1)" />
+      <rect x="7.5" y="7" width="4" height="14.5" rx="1" fill="var(--gm-i2)" />
+      <rect x="13.5" y="10" width="4" height="11.5" rx="1" fill="var(--gm-i4)" />
+      <rect x="19.5" y="2.5" width="4" height="19" rx="1" fill="var(--gm-i5)" />
     </svg>
   );
 }
@@ -43,10 +43,12 @@ export function Logo({
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       <LogoMark size={markSize} aria-hidden="true" role="presentation" />
-      {/* Visually hidden when the header is tight, but always readable. */}
+      {/* Visually hidden when the header is tight, but always readable. A
+          bold geometric sans with a touch of positive tracking, the way the
+          reference's own wordmark reads — confident, not compressed. */}
       <span
         className={cn(
-          "text-base font-semibold tracking-[-0.028em] text-ink",
+          "text-[15px] font-bold tracking-[0.01em] text-ink",
           compactUntil === "xs" && "sr-only min-[400px]:not-sr-only",
           compactUntil === "sm" && "sr-only sm:not-sr-only",
         )}
