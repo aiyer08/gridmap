@@ -611,7 +611,7 @@ export async function buildSnapshot(
       Math.abs(marginalNow - averageNow) > 40
     ) {
       notes.push(
-        `WattTime puts the *marginal* emissions of your next kilowatt-hour at about ${Math.round(marginalNow)} g/kWh, against a grid average of ${Math.round(averageNow)} g/kWh. Both are right: the average includes all the solar on the system, while the plant that ramps up for extra demand is usually gas. We use the average for the headline because it is what every region publishes.`,
+        `WattTime puts the marginal emissions — what your next kilowatt-hour actually causes — at about ${Math.round(marginalNow)} g/kWh, against a grid average of ${Math.round(averageNow)} g/kWh. Both are right: the average includes all the solar on the system, while the plant that ramps up for extra demand is usually gas. We use the average for the headline because it is what every region publishes.`,
       );
     } else {
       notes.push(
