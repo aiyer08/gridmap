@@ -4,7 +4,7 @@ import { Leaf, TrendingDown, TrendingUp, Zap } from "lucide-react";
 import { FuelMixBar } from "@/components/charts/FuelMixBar";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody } from "@/components/ui/Card";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { InfoDot } from "@/components/ui/Tooltip";
 import { cn } from "@/components/ui/cn";
 import {
   absoluteLabel,
@@ -103,25 +103,27 @@ export function GridNowCard({
           </div>
 
           <div className="col-span-2 sm:col-span-1">
-            <dt className="flex items-center gap-1 text-xs font-medium tracking-wide text-ink-3 uppercase">
-              Cleaner than
-              <Tooltip content="Out of every hour in the next seven days on your grid, this share is dirtier than the hour you're in now.">
-                <span
-                  tabIndex={0}
-                  className="cursor-help text-ink-3 underline decoration-dotted underline-offset-2"
-                  aria-label="How this is calculated"
-                >
-                  ?
-                </span>
-              </Tooltip>
+            {/*
+              This used to read "CLEANER THAN  ?" with the tooltip trigger as a
+              bare question mark, so the label looked like a sentence with a
+              missing value rather than a stat with a help affordance. The label
+              now stands on its own and the explanation lives behind a proper
+              InfoDot.
+            */}
+            <dt className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-ink-3 uppercase">
+              How this hour ranks
+              <InfoDot
+                content={`We compare right now against every hour in the next seven days on your grid. ${percentile}% of them are dirtier than this moment.`}
+                label="How the ranking is worked out"
+                size="sm"
+              />
             </dt>
-            <dd className="mt-1 flex items-baseline gap-1">
+            <dd className="mt-1 flex items-baseline gap-1.5">
               <span className="font-mono text-2xl font-semibold tabular-nums">
                 {percentile}%
               </span>
-              <span className="text-xs text-ink-3">of this week</span>
+              <span className="text-xs text-ink-3">of this week is dirtier</span>
             </dd>
-            {/* Thresholds match verdictForNow so the two lines never disagree. */}
             <dd className="mt-0.5 flex items-center gap-1 text-xs text-ink-3">
               {percentile >= 66 ? (
                 <TrendingDown className="size-3" />
