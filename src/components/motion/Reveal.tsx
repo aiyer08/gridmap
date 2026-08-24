@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { useHydrated } from "@/components/ui/useHydrated";
 
 export interface RevealProps {
   children: React.ReactNode;
@@ -28,8 +29,13 @@ const TAGS = { div: motion.div, section: motion.section, li: motion.li } as cons
  * element actually reaches the viewport, so content has settled by the time
  * someone's eye gets to it rather than animating mid-glance.
  *
- * Renders a plain static element — no motion component, no listeners — when
- * the visitor prefers reduced motion.
+ * Renders a plain, already-visible static element — no motion component, no
+ * `IntersectionObserver` — when the visitor prefers reduced motion, *and*
+ * before the client has hydrated. That second guard matters: the resting
+ * state with no JavaScript (or JavaScript that errors before mount) must be
+ * the same fully-legible content, not an `opacity: 0` waiting on a scroll
+ * observer that will never attach. Once hydrated, it upgrades to the
+ * animated, scroll-triggered version.
  */
 export function Reveal({
   children,
@@ -41,8 +47,9 @@ export function Reveal({
   as = "div",
 }: RevealProps) {
   const reduce = useReducedMotion();
+  const hydrated = useHydrated();
 
-  if (reduce) {
+  if (reduce || !hydrated) {
     const Tag = as;
     return (
       <Tag id={id} aria-labelledby={ariaLabelledBy} className={className}>
